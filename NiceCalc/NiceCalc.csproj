@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net5.0-windows</TargetFramework>
+		<OutputType>WinExe</OutputType>
+		<UseWindowsForms>true</UseWindowsForms>
+		<StartupObject>NiceCalc.Program</StartupObject>
+		
+		<Nullable>enable</Nullable>
+		<ApplicationIcon>CubicComplexIcon.ico</ApplicationIcon>
+		
+		<ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Include="CubicComplexIcon.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="ExtendedNumerics.BigDecimal" Version="2023.207.1303" />
+		<PackageReference Include="ExtendedNumerics.BigRational" Version="2023.179.1529" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="System.Management" Version="7.0.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="Setting.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Settings.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
+</Project>
