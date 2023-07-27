@@ -47,7 +47,8 @@ namespace NiceCalc
 				});
 			tbInput.AutoCompleteCustomSource = autoCompleteSource;
 
-			CurrentSettings = new Settings("Setting.json");
+			CurrentSettings = new Settings();
+			CurrentSettings.Load();
 			LoadCurrentSetting();
 			RegisterSettingsEventHandles();
 		}
@@ -116,14 +117,27 @@ namespace NiceCalc
 			cbCtrlEnterForTotal.Checked = CurrentSettings.CtrlEnterForTotal;
 			numericPrecision.Value = CurrentSettings.Precision;
 			BigDecimal.Precision = CurrentSettings.Precision;
+
+			int splitterDistance = splitContainer_LeftRight.Size.Width - splitContainer_LeftRight.SplitterWidth - CurrentSettings.RightPanelWidth;
+			splitContainer_LeftRight.SplitterDistance = splitterDistance;
 		}
 
 		private void RegisterSettingsEventHandles()
 		{
-			numericPrecision.ValueChanged += NumericPrecision_ValueChanged; ;
 			cbCopyInputToOutput.CheckedChanged += CbCopyInputToOutput_CheckedChanged;
 			cbCtrlEnterForTotal.CheckedChanged += CbCtrlEnterForTotal_CheckedChanged;
+			numericPrecision.ValueChanged += NumericPrecision_ValueChanged; ;
 			FormClosing += MainForm_FormClosing;
+		}
+
+		private void CbCopyInputToOutput_CheckedChanged(object? sender, EventArgs e)
+		{
+			CurrentSettings.CopyInputToOutput = cbCopyInputToOutput.Checked;
+		}
+
+		private void CbCtrlEnterForTotal_CheckedChanged(object? sender, EventArgs e)
+		{
+			CurrentSettings.CtrlEnterForTotal = cbCtrlEnterForTotal.Checked;
 		}
 
 		private void NumericPrecision_ValueChanged(object? sender, EventArgs e)
@@ -132,20 +146,14 @@ namespace NiceCalc
 			BigDecimal.Precision = CurrentSettings.Precision;
 		}
 
-		private void CbCtrlEnterForTotal_CheckedChanged(object? sender, EventArgs e)
-		{
-			CurrentSettings.CtrlEnterForTotal = cbCtrlEnterForTotal.Checked;
-		}
-
-		private void CbCopyInputToOutput_CheckedChanged(object? sender, EventArgs e)
-		{
-			CurrentSettings.CopyInputToOutput = cbCopyInputToOutput.Checked;
-		}
-
 		private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
 		{
 			CurrentSettings.WindowWidth = this.Width;
 			CurrentSettings.WindowHeight = this.Height;
+
+			int rightPanelWidth = splitContainer_LeftRight.Size.Width - splitContainer_LeftRight.SplitterDistance - splitContainer_LeftRight.SplitterWidth;
+			CurrentSettings.RightPanelWidth = rightPanelWidth;
+
 			CurrentSettings.Save();
 		}
 

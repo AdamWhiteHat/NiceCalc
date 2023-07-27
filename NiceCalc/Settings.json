@@ -1,7 +1,8 @@
 {
-  "CopyInputToOutput": true,
-  "CtrlEnterForTotal": false,
-  "Precision": 50,
-  "WindowHeight": 400,
-  "WindowWidth": 667
+    "CopyInputToOutput": true,
+    "CtrlEnterForTotal": false,
+    "Precision": 50,
+    "RightPanelWidth": 162,
+    "WindowHeight": 675,
+    "WindowWidth": 425
 }
