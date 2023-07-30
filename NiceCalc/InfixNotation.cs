@@ -19,7 +19,7 @@ namespace NiceCalc
 	{
 		public static readonly string Numbers = "0123456789.";
 		public static readonly string Operators = "+-*/^";
-		public static readonly string Functions = "⎷⍻|⌥ⅇ[⎿⎾⋂⋃±σγτ!";
+		public static readonly string Functions = "⎷|ⅇ[⎿⎾±σγτ!ℙꓑꟼＦＤ⍻⌥⋂⋃";
 
 		public static bool IsNumeric(string text)
 		{
@@ -90,9 +90,54 @@ namespace NiceCalc
 		private static string TokenizeFunctions(string input)
 		{
 			string result = input;
+
+			result = RewriteFactorials(result);
+
 			foreach (var kvp in FunctionTokenDictionary)
 			{
 				result = result.Replace(kvp.Key, kvp.Value, true, CultureInfo.InvariantCulture);
+			}
+			return result;
+		}
+
+		/// <summary>
+		/// Turns factorials: "(2 * 12!) - 12"
+		/// Into function form: "(2 * factorial(12)) - 12"
+		/// </summary>
+		private static string RewriteFactorials(string input)
+		{
+			string result = input;
+			while (result.Contains('!'))
+			{
+				int symbolIndex = result.LastIndexOf('!');
+				int index = symbolIndex;
+
+				if (result[symbolIndex - 1] == ')')
+				{
+					index = result.LastIndexOf('(', symbolIndex - 1);
+					if (index == -1)
+					{
+						throw new Exception(
+												$"Found closed parenthesis ')' next to factorial symbol '!' at index {symbolIndex}, but cannot find the open parenthesis: '('.");
+					}
+
+					result = result.Remove(symbolIndex, 1);
+
+				}
+				else
+				{
+					while (index - 1 >= 0 && Numbers.Contains(result[index - 1]))
+					{
+						index--;
+					}
+
+					result = result.Remove(symbolIndex, 1);
+
+					result = result.Insert(symbolIndex, ")");
+					result = result.Insert(index, "(");
+				}
+
+				result = result.Insert(index, "factorial");
 			}
 			return result;
 		}
@@ -128,6 +173,8 @@ namespace NiceCalc
 			{ "lcm",           "⋃"  }
 		};
 
+
+
 		private static readonly Dictionary<char, int> TokenParameterCountDictionary = new()
 		{
 			{ '⎷',  1 },
@@ -155,26 +202,38 @@ namespace NiceCalc
 
 		private static readonly Dictionary<char, bool> TokenParameterIntegerDictionary = new()
 		{
-			{ '⎷',      true    },
-			{ '|',      true    },
+			// === Unary ===
+
+			// Real
 			{ 'ⅇ',      false   },
 			{ '[',      false   },
 			{ '⎿',      false   },
 			{ '⎾',      false   },
-			{ '±',      false   },
 			{ 'σ',      false   },
 			{ 'γ',      false   },
 			{ 'τ',      false   },
-			{ '!',      false   },
+
+			// BigInteger
+			{ '⎷',      true    },
+			{ '|',      true    },
+			{ '±',      true   },
+			{ '!',      true   },
 			{ 'ℙ',      true    },
 			{ 'ꓑ',      true    },
 			{ 'ꟼ',      true    },
-			{ 'Ｆ',      true    },
-			{ 'Ｄ',      true    },
+
+			// === Binary ===
+			// Real
 			{ '⍻',      false   },
 			{ '⌥',      false   },
+
+			// BigInteger
 			{ '⋂',      true    },
-			{ '⋃',      true    }
+			{ '⋃',      true    },
+
+			// BigInteger, but Returns a string
+			{ 'Ｆ',      true    },
+			{ 'Ｄ',      true    },
 		};
 
 		private static readonly Dictionary<char, Func<BigInteger, BigInteger>> TokenUnaryIntegerFunctionDictionary = new()

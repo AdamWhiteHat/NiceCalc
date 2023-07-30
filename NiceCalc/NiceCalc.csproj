@@ -7,7 +7,7 @@
 		<StartupObject>NiceCalc.Program</StartupObject>
 		
 		<Nullable>enable</Nullable>
-		<ApplicationIcon>CubicComplexIcon.ico</ApplicationIcon>
+		<ApplicationIcon>NiceCalc.ico</ApplicationIcon>
 		
 		<ProduceReferenceAssembly>False</ProduceReferenceAssembly>
 	</PropertyGroup>

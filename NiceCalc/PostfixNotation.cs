@@ -19,134 +19,6 @@ namespace NiceCalc
 	{
 		private static readonly string AllowedCharacters = InfixNotation.Numbers + InfixNotation.Operators + InfixNotation.Functions + " ";
 
-		public static Expression<Func<BigInteger>> ExpressionTree(string postfixNotationString)
-		{
-			if (string.IsNullOrWhiteSpace(postfixNotationString))
-			{
-				throw new ArgumentException("Argument postfixNotationString must not be null, empty or whitespace.", "postfixNotationString");
-			}
-
-			Stack<Expression> stack = new Stack<Expression>();
-			string sanitizedString = new string(postfixNotationString.Where(c => AllowedCharacters.Contains(c)).ToArray());
-			List<string> enumerablePostfixTokens = sanitizedString.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-
-			foreach (string token in enumerablePostfixTokens)
-			{
-				if (token.Length < 1)
-				{
-					throw new Exception("Token.Length is less than one.");
-				}
-
-				BigInteger tokenValue = 0;
-				bool parseSuccess = BigInteger.TryParse(token, out tokenValue);
-
-
-				if (token.Length > 1) // Numbers > 10 will have a token length > 1
-				{
-					if (InfixNotation.IsNumeric(token) && parseSuccess)
-					{
-						stack.Push(Expression.Constant(tokenValue));
-					}
-					else
-					{
-						throw new Exception("Operators and operands must be separated by a space.");
-					}
-				}
-				else
-				{
-					char tokenChar = token[0];
-
-					if (InfixNotation.Numbers.Contains(tokenChar) && parseSuccess)
-					{
-						stack.Push(Expression.Constant(tokenValue));
-					}
-					else if (InfixNotation.Operators.Contains(tokenChar))
-					{
-						if (stack.Count < 2) // There must be two operands for the operator to operate on
-						{
-							throw new FormatException("The algebraic string has not sufficient values in the expression for the number of operators; There must be two operands for the operator to operate on.");
-						}
-
-						Expression left = stack.Pop();
-						Expression right = stack.Pop();
-						Expression operation = null;
-
-						/*
-						// ^ token uses Math.Pow, which both gives and takes double, hence convert
-						if (tokenChar == '^')
-						{
-							if (left.Type != typeof(double))
-							{
-								left = Expression.Convert(left, typeof(double));
-							}
-							if (right.Type != typeof(double))
-							{
-								right = Expression.Convert(right, typeof(double));
-							}
-						}
-						else // Math.Pow returns a double, so we must check here for all other operators
-						{
-							if (left.Type != typeof(BigInteger))
-							{
-								left = Expression.Convert(left, typeof(BigInteger));
-							}
-							if (right.Type != typeof(BigInteger))
-							{
-								right = Expression.Convert(right, typeof(BigInteger));
-							}
-						}
-						*/
-
-						if (tokenChar == '+')
-						{
-							operation = Expression.AddChecked(left, right);
-						}
-						else if (tokenChar == '-')
-						{
-							operation = Expression.SubtractChecked(left, right);
-						}
-						else if (tokenChar == '*')
-						{
-							operation = Expression.MultiplyChecked(left, right);
-						}
-						else if (tokenChar == '/')
-						{
-							operation = Expression.Divide(left, right);
-						}
-						else if (tokenChar == '^')
-						{
-							operation = Expression.Power(left, right);
-						}
-
-						if (operation != null)
-						{
-							stack.Push(operation);
-						}
-						else
-						{
-							throw new Exception("Value never got set.");
-						}
-					}
-					else
-					{
-						throw new Exception(string.Format("Unrecognized character '{0}'.", tokenChar));
-					}
-				}
-
-			}
-
-			if (stack.Count == 1)
-			{
-				return Expression.Lambda<Func<BigInteger>>(stack.Pop());
-			}
-			else
-			{
-				throw new Exception("The input has too many values for the number of operators.");
-			}
-
-		} // method
-
-
 		public static BigDecimal Evaluate(string postfixNotationString)
 		{
 			if (string.IsNullOrWhiteSpace(postfixNotationString))
@@ -154,10 +26,17 @@ namespace NiceCalc
 				throw new ParsingException($"Argument {nameof(postfixNotationString)} must not be null, empty or whitespace.");
 			}
 
-			Stack<string> stack = new Stack<string>();
+			var unknownCharacters = postfixNotationString.Where(c => !AllowedCharacters.Contains(c));
+			if (unknownCharacters.Any())
+			{
+				throw new ParsingException($"Argument {nameof(postfixNotationString)} contains some unknown tokens: {{ {string.Join(", ", unknownCharacters)} }}.");
+			}
+
 			string sanitizedString = new string(postfixNotationString.Where(c => AllowedCharacters.Contains(c)).ToArray());
+
 			List<string> enumerablePostfixTokens = sanitizedString.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
 
+			Stack<string> stack = new Stack<string>();
 			foreach (string token in enumerablePostfixTokens)
 			{
 				if (token.Length > 0)
@@ -308,52 +187,6 @@ namespace NiceCalc
 
 		} // method
 
-		private static BigInteger Operation_BigInteger(char token, string r, string l)
-		{
-			BigInteger rhs = BigInteger.MinusOne;
-			BigInteger lhs = BigInteger.MinusOne;
-
-			bool parseSuccess = BigInteger.TryParse(r, out rhs);
-			parseSuccess &= (rhs != BigInteger.MinusOne);
-
-			if (!parseSuccess)
-			{
-				throw new ParsingException("Unable to parse the right-hand-side parameter into a BigInteger.", token: r);
-			}
-
-			parseSuccess &= BigInteger.TryParse(l, out lhs);
-			parseSuccess &= (lhs != BigInteger.MinusOne);
-
-			if (!parseSuccess)
-			{
-				throw new ParsingException("Unable to parse the left-hand-side parameter into a BigInteger.", token: l);
-			}
-
-			BigInteger value = BigInteger.MinusOne;
-			if (token == '+')
-			{
-				value = lhs + rhs;
-			}
-			else if (token == '-')
-			{
-				value = lhs - rhs;
-			}
-			else if (token == '*')
-			{
-				value = lhs * rhs;
-			}
-			else if (token == '/')
-			{
-				value = lhs / rhs;
-			}
-			else if (token == '^')
-			{
-				value = Maths.Pow(lhs, rhs);
-			}
-
-			return value;
-		}
-
 		private static BigDecimal Operation_BigDecimal(char token, string r, string l)
 		{
 			BigDecimal rhs = BigDecimal.MinusOne;
@@ -409,5 +242,195 @@ namespace NiceCalc
 
 			return value;
 		}
+
+
+		#region Dead Code
+
+		/*
+
+		private static BigInteger Operation_BigInteger(char token, string r, string l)
+		{
+			BigInteger rhs = BigInteger.MinusOne;
+			BigInteger lhs = BigInteger.MinusOne;
+
+			bool parseSuccess = BigInteger.TryParse(r, out rhs);
+			parseSuccess &= (rhs != BigInteger.MinusOne);
+
+			if (!parseSuccess)
+			{
+				throw new ParsingException("Unable to parse the right-hand-side parameter into a BigInteger.", token: r);
+			}
+
+			parseSuccess &= BigInteger.TryParse(l, out lhs);
+			parseSuccess &= (lhs != BigInteger.MinusOne);
+
+			if (!parseSuccess)
+			{
+				throw new ParsingException("Unable to parse the left-hand-side parameter into a BigInteger.", token: l);
+			}
+
+			BigInteger value = BigInteger.MinusOne;
+			if (token == '+')
+			{
+				value = lhs + rhs;
+			}
+			else if (token == '-')
+			{
+				value = lhs - rhs;
+			}
+			else if (token == '*')
+			{
+				value = lhs * rhs;
+			}
+			else if (token == '/')
+			{
+				value = lhs / rhs;
+			}
+			else if (token == '^')
+			{
+				value = Maths.Pow(lhs, rhs);
+			}
+
+			return value;
+		}
+
+		public static Expression<Func<BigInteger>> ExpressionTree(string postfixNotationString)
+		{
+			if (string.IsNullOrWhiteSpace(postfixNotationString))
+			{
+				throw new ParsingException($"Argument {nameof(postfixNotationString)} must not be null, empty or whitespace.");
+			}
+
+			var unknownCharacters = postfixNotationString.Where(c => !AllowedCharacters.Contains(c));
+
+			if (unknownCharacters.Any())
+			{
+				throw new ParsingException($"Argument {nameof(postfixNotationString)} contains some unknown tokens: {{ {string.Join(", ", unknownCharacters)} }}.");
+			}
+
+			string sanitizedString = new string(postfixNotationString.Where(c => AllowedCharacters.Contains(c)).ToArray());
+
+			List<string> enumerablePostfixTokens = sanitizedString.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+
+			Stack<Expression> stack = new Stack<Expression>();
+			foreach (string token in enumerablePostfixTokens)
+			{
+				if (token.Length < 1)
+				{
+					throw new ParsingException("Token.Length is less than one.", token: token);
+				}
+
+				BigInteger tokenValue = 0;
+				bool parseSuccess = BigInteger.TryParse(token, out tokenValue);
+
+				if (token.Length > 1) // Numbers > 10 will have a token length > 1
+				{
+					if (InfixNotation.IsNumeric(token) && parseSuccess)
+					{
+						stack.Push(Expression.Constant(tokenValue));
+					}
+					else
+					{
+						throw new ParsingException("Operators and operands must be separated by a space.");
+					}
+				}
+				else
+				{
+					char tokenChar = token[0];
+
+					if (InfixNotation.Numbers.Contains(tokenChar) && parseSuccess)
+					{
+						stack.Push(Expression.Constant(tokenValue));
+					}
+					else if (InfixNotation.Operators.Contains(tokenChar))
+					{
+						if (stack.Count < 2) // There must be two operands for the operator to operate on
+						{
+							throw new ParsingException("The algebraic string has not sufficient values in the expression for the number of operators; There must be two operands for a binary operator to operate on.", token: tokenChar);
+						}
+
+						Expression left = stack.Pop();
+						Expression right = stack.Pop();
+						Expression operation = null;
+
+						
+						//// ^ token uses Math.Pow, which both gives and takes double, hence convert
+						//if (tokenChar == '^')
+						//{
+						//	if (left.Type != typeof(double))
+						//	{
+						//		left = Expression.Convert(left, typeof(double));
+						//	}
+						//	if (right.Type != typeof(double))
+						//	{
+						//		right = Expression.Convert(right, typeof(double));
+						//	}
+						//}
+						//else // Math.Pow returns a double, so we must check here for all other operators
+						//{
+						//	if (left.Type != typeof(BigInteger))
+						//	{
+						//		left = Expression.Convert(left, typeof(BigInteger));
+						//	}
+						//	if (right.Type != typeof(BigInteger))
+						//	{
+						//		right = Expression.Convert(right, typeof(BigInteger));
+						//	}
+						//}
+						
+
+						if (tokenChar == '+')
+						{
+							operation = Expression.AddChecked(left, right);
+						}
+						else if (tokenChar == '-')
+						{
+							operation = Expression.SubtractChecked(left, right);
+						}
+						else if (tokenChar == '*')
+						{
+							operation = Expression.MultiplyChecked(left, right);
+						}
+						else if (tokenChar == '/')
+						{
+							operation = Expression.Divide(left, right);
+						}
+						else if (tokenChar == '^')
+						{
+							operation = Expression.Power(left, right);
+						}
+
+						if (operation != null)
+						{
+							stack.Push(operation);
+						}
+						else
+						{
+							throw new ParsingException("Value never got set.", token: tokenChar);
+						}
+					}
+					else
+					{
+						throw new ParsingException("Unrecognized token!", token: tokenChar);
+					}
+				}
+
+			}
+
+			if (stack.Count == 1)
+			{
+				return Expression.Lambda<Func<BigInteger>>(stack.Pop());
+			}
+			else
+			{
+				throw new ParsingException("The input has too many values for the number of operators.");
+			}
+
+		} // method
+		*/
+
+		#endregion
+
+
 	} // class
 } // namespace

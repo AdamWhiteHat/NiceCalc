@@ -68,6 +68,11 @@ namespace NiceCalc
 					}
 				}
 
+				if (e.Control)
+				{
+					return;
+				}
+
 				e.Handled = true;
 				e.SuppressKeyPress = true;
 				ProcessLines(tbInput.Lines);

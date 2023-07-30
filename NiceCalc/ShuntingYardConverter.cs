@@ -20,14 +20,14 @@ namespace NiceCalc
 		{
 			Left, Right
 		}
-		private static readonly Dictionary<char, int> PrecedenceDictionary = new ()
+		private static readonly Dictionary<char, int> PrecedenceDictionary = new()
 		{
 			{'(', 0}, {')', 0},
 			{'+', 1}, {'-', 1},
 			{'*', 2}, {'/', 2},
 			{'^', 3}
 		};
-		private static readonly Dictionary<char, Associativity> AssociativityDictionary = new ()
+		private static readonly Dictionary<char, Associativity> AssociativityDictionary = new()
 		{
 			{'+', Associativity.Left}, {'-', Associativity.Left}, {'*', Associativity.Left},{'/', Associativity.Left},
 			{'^', Associativity.Right}
@@ -68,25 +68,28 @@ namespace NiceCalc
 				throw new ParsingException("Argument infixNotationString must not be null, empty or whitespace.");
 			}
 
-			List<char> output = new List<char>();
-			Stack<char> operatorStack = new Stack<char>();
-			//Stack<string> functionStack = new Stack<string>();
-
-			List<string> enumerableInfixTokens = new List<string>();
-
+			var unknownCharacters = infixNotationString.Where(c => !AllowedCharacters.Contains(c));
+			if (unknownCharacters.Any())
+			{
+				throw new ParsingException($"Argument {nameof(infixNotationString)} contains some unknown tokens: {{ {string.Join(", ", unknownCharacters)} }}.");
+			}
 
 
 			string sanitizedString = new string(infixNotationString.Where(c => AllowedCharacters.Contains(c)).ToArray());
 
+
+			// Temp variables
+			bool isInFunction = false;
 			string number = string.Empty;
 			string parameter = string.Empty;
+			List<char> output = new List<char>();
+			Stack<char> operatorStack = new Stack<char>();
+			//Stack<string> functionStack = new Stack<string>();
+			List<string> enumerableInfixTokens = new List<string>();
 
-			bool isInFunction = false;
 
-			//
 			// Parse the raw input into a list of tokens.
 			// Collect runs of digits into a single token (number)
-			//
 			foreach (char c in sanitizedString)
 			{
 				if (isInFunction)

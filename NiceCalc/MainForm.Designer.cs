@@ -127,6 +127,7 @@ namespace NiceCalc
 			// 
 			// splitContainer_LeftRight
 			// 
+			this.splitContainer_LeftRight.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
 			this.splitContainer_LeftRight.Cursor = System.Windows.Forms.Cursors.VSplit;
 			this.splitContainer_LeftRight.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.splitContainer_LeftRight.Location = new System.Drawing.Point(0, 0);
@@ -152,6 +153,7 @@ namespace NiceCalc
 			this.flowLayoutPanel_RightToolbar.Controls.Add(this.cbCopyInputToOutput);
 			this.flowLayoutPanel_RightToolbar.Controls.Add(this.cbCtrlEnterForTotal);
 			this.flowLayoutPanel_RightToolbar.Controls.Add(this.panel1);
+			this.flowLayoutPanel_RightToolbar.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
 			this.flowLayoutPanel_RightToolbar.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.flowLayoutPanel_RightToolbar.Location = new System.Drawing.Point(0, 0);
 			this.flowLayoutPanel_RightToolbar.Margin = new System.Windows.Forms.Padding(0);
