@@ -19,6 +19,9 @@ namespace NiceCalc
 
 		private void MainForm_Shown(object sender, System.EventArgs e)
 		{
+			tbInput.PlaceholderText = "Input";
+			tbOutput.PlaceholderText = "Results";
+
 			AutoCompleteStringCollection autoCompleteSource = new AutoCompleteStringCollection();
 			autoCompleteSource.AddRange(new string[]
 				{
@@ -46,10 +49,13 @@ namespace NiceCalc
 					"trunc"
 				});
 			tbInput.AutoCompleteCustomSource = autoCompleteSource;
+			tbInput.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+			tbInput.AutoCompleteSource = AutoCompleteSource.CustomSource;
+
 
 			CurrentSettings = new Settings();
 			CurrentSettings.Load();
-			LoadCurrentSetting();
+			LoadCurrentSetting(CurrentSettings);
 			RegisterSettingsEventHandles();
 		}
 
@@ -112,16 +118,34 @@ namespace NiceCalc
 			}
 		}
 
+		void BtnFunctionClick(object sender, EventArgs e)
+		{
+			Button btn = (Button)sender;
+
+			int start = tbInput.SelectionStart;
+			int end = tbInput.SelectionStart + tbInput.SelectionLength;
+
+			string text = tbInput.Text;
+
+			text = text.Insert(end, ")");
+			text = text.Insert(start, btn.Text + "(");
+
+			tbInput.Text = text;
+		}
+
 		#region CurrentSettings <=> UI Controls
 
-		private void LoadCurrentSetting()
+		private void LoadCurrentSetting(Settings currentSettings)
 		{
-			this.Width = CurrentSettings.WindowWidth;
-			this.Height = CurrentSettings.WindowHeight;
-			cbCopyInputToOutput.Checked = CurrentSettings.CopyInputToOutput;
-			cbCtrlEnterForTotal.Checked = CurrentSettings.CtrlEnterForTotal;
-			numericPrecision.Value = CurrentSettings.Precision;
-			BigDecimal.Precision = CurrentSettings.Precision;
+			this.Width = currentSettings.WindowWidth;
+			this.Height = currentSettings.WindowHeight;
+			Point location = new Point(currentSettings.WindowLocationX, currentSettings.WindowLocationY);
+			this.Location = location;
+
+			cbCopyInputToOutput.Checked = currentSettings.CopyInputToOutput;
+			cbCtrlEnterForTotal.Checked = currentSettings.CtrlEnterForTotal;
+			numericPrecision.Value = currentSettings.Precision;
+			BigDecimal.Precision = currentSettings.Precision;
 
 			int splitterDistance = splitContainer_LeftRight.Size.Width - splitContainer_LeftRight.SplitterWidth - CurrentSettings.RightPanelWidth;
 			splitContainer_LeftRight.SplitterDistance = splitterDistance;
@@ -153,6 +177,8 @@ namespace NiceCalc
 
 		private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
 		{
+			CurrentSettings.WindowLocationX = this.Location.X;
+			CurrentSettings.WindowLocationY = this.Location.Y;
 			CurrentSettings.WindowWidth = this.Width;
 			CurrentSettings.WindowHeight = this.Height;
 

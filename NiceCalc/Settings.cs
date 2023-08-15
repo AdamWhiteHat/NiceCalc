@@ -100,7 +100,48 @@ namespace NiceCalc
 		}
 		private int _windowHeight;
 
-		protected bool IsDirty { get; set; } = false;
+		public int WindowLocationX
+		{
+			get { return _windowLocationX; }
+			set
+			{
+				if (_windowLocationX != value)
+				{
+					_windowLocationX = value;
+					OnPropertyChanged();
+				}
+			}
+		}
+		private int _windowLocationX;
+
+		public int WindowLocationY
+		{
+			get { return _windowLocationY; }
+			set
+			{
+				if (_windowLocationY != value)
+				{
+					_windowLocationY = value;
+					OnPropertyChanged();
+				}
+			}
+		}
+		private int _windowLocationY;
+
+		protected bool IsDirty
+		{
+			get { return _isDirty; }
+			set
+			{
+				if (_isDirty != value)
+				{
+					_isDirty = value;
+					OnPropertyChanged();
+				}
+			}
+		}
+		private bool _isDirty;
+
 		protected string SettingsFilename { get; set; }
 
 		public Settings()
@@ -128,7 +169,6 @@ namespace NiceCalc
 			string json = File.ReadAllText(SettingsFilename);
 			Settings loaded = JsonConvert.DeserializeObject<Settings>(json);
 			SetProperties(loaded);
-			IsDirty = false;
 		}
 
 		protected virtual void SetProperties(Settings from)
@@ -136,9 +176,13 @@ namespace NiceCalc
 			this.CopyInputToOutput = from.CopyInputToOutput;
 			this.CtrlEnterForTotal = from.CtrlEnterForTotal;
 			this.Precision = from.Precision;
+			this.RightPanelWidth = from.RightPanelWidth;
 			this.WindowWidth = from.WindowWidth;
 			this.WindowHeight = from.WindowHeight;
-			this.RightPanelWidth = from.RightPanelWidth;
+			this.WindowLocationX = from.WindowLocationX;
+			this.WindowLocationY = from.WindowLocationY;
+
+			IsDirty = false;
 		}
 
 		protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

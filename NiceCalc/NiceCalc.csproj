@@ -1,19 +1,51 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net5.0-windows</TargetFramework>
+		<TargetFramework>net6.0-windows8.0</TargetFramework>
 		<OutputType>WinExe</OutputType>
-		<UseWindowsForms>true</UseWindowsForms>
+		<UseWindowsForms>True</UseWindowsForms>
 		<StartupObject>NiceCalc.Program</StartupObject>
-		
-		<Nullable>enable</Nullable>
+
+		<Title>NiceCalc</Title>
+		<Description>An arbitrary precision desktop calculator similar to preccalc.</Description>
+		<Authors>Adam White</Authors>
+		<Company>Adam White</Company>
+		<Copyright>Copyright © $([System.DateTime]::Now.ToString("yyyy")) Adam White</Copyright>
+		<RepositoryUrl>https://github.com/AdamWhiteHat/NiceCalc</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageIcon>NiceCalc.ico</PackageIcon>
 		<ApplicationIcon>NiceCalc.ico</ApplicationIcon>
-		
+
+		<Version>$([System.DateTime]::Now.ToString("yyyy."$([System.DateTime]::Now.DayOfYear)".HHmm"))</Version>
+		<AssemblyVersion>$([System.DateTime]::Now.ToString("yyyy."$([System.DateTime]::Now.DayOfYear)".HHmm"))</AssemblyVersion>
+		<FileVersion>$([System.DateTime]::Now.ToString("yyyy."$([System.DateTime]::Now.DayOfYear)".HHmm"))</FileVersion>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<Nullable>enable</Nullable>
 		<ProduceReferenceAssembly>False</ProduceReferenceAssembly>
 	</PropertyGroup>
 
+	<PropertyGroup>
+		<AnalysisLevel>5.0-minimum</AnalysisLevel>
+		<EnableNETAnalyzers>False</EnableNETAnalyzers>
+		<RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
+	</PropertyGroup>
+
 	<ItemGroup>
-		<Content Include="CubicComplexIcon.ico" />
+		<EmbeddedResource Include="NiceCalc.ico">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</EmbeddedResource>
+		<None Update="NiceCalc.ico">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="Settings.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -21,15 +53,6 @@
 		<PackageReference Include="ExtendedNumerics.BigRational" Version="2023.179.1529" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="System.Management" Version="7.0.2" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Update="Setting.json">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
-	  <None Update="Settings.json">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
 	</ItemGroup>
 
 </Project>
