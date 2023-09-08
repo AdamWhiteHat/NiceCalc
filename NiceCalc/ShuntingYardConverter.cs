@@ -109,133 +109,15 @@ namespace NiceCalc
 			}
 			string sanitizedString = new string(infixNotationString.Where(c => AllowedCharacters.Contains(c)).ToArray());
 
-			/*
-						// Temp variables
-						int functionScope = 0;
-						int parenthesesScope = 0;
-						string number = string.Empty;
-						string parameter = string.Empty;
-						List<char> output = new List<char>();
-						Stack<char> operatorStack = new Stack<char>();
-						//Stack<string> functionStack = new Stack<string>();
-						List<string> enumerableInfixTokens = new List<string>();
-
-
-						// Parse the raw input into a list of tokens.
-						// Collect runs of digits into a single token (number)
-
-						char current;
-						char next;
-
-						while (inputQueue.TryDequeue(out current))
-						{
-							if(!inputQueue.TryPeek(out next))
-							{
-								next = END_OF_INPUT;
-							}
-
-							if (functionScope)
-							{
-								if (current == '(')
-								{
-									enumerableInfixTokens.Add(current.ToString());
-								}
-								else if (current == ',')
-								{
-									enumerableInfixTokens.Add(parameter);
-									parameter = string.Empty;
-									enumerableInfixTokens.Add(current.ToString());
-								}
-								else if (current == ')')
-								{
-									enumerableInfixTokens.Add(parameter);
-									parameter = string.Empty;
-									enumerableInfixTokens.Add(current.ToString());
-									functionScope--;
-								}
-								else
-								{
-									parameter += current.ToString();
-								}
-							}
-							else if (InfixNotation.Functions.Contains(current))
-							{
-								if (number.Length > 0)
-								{
-									enumerableInfixTokens.Add(number);
-									number = string.Empty;
-								}
-
-								functionScope++;
-
-								//functionStack.Push(c.ToString());
-								enumerableInfixTokens.Add(current.ToString());
-							}
-							else if (InfixNotation.Operators.Contains(current))
-							{
-								if (number.Length > 0)
-								{
-									enumerableInfixTokens.Add(number);
-									number = string.Empty;
-								}
-								enumerableInfixTokens.Add(current.ToString());
-							}
-							else if (")".Contains(current))
-							{
-								if (number.Length > 0)
-								{
-									enumerableInfixTokens.Add(number);
-									number = string.Empty;
-								}
-								enumerableInfixTokens.Add(current.ToString());
-							}
-							else if ("(".Contains(current))
-							{
-								if (number.Length > 0)
-								{
-									enumerableInfixTokens.Add(number);
-									number = string.Empty;
-								}
-								enumerableInfixTokens.Add(current.ToString());
-							}
-							else if (InfixNotation.Numbers.Contains(current))
-							{
-								number += current.ToString();
-							}
-							else if (current == ',' && functionScope > 0)
-							{
-								if (number.Length > 0)
-								{
-									enumerableInfixTokens.Add(number);
-									number = string.Empty;
-								}
-								enumerableInfixTokens.Add(current.ToString());
-							}
-							else
-							{
-								throw new ParsingException($"Unexpected character: '{current}'.", token: current);
-							}
-						}
-
-						if (number.Length > 0)
-						{
-							enumerableInfixTokens.Add(number);
-							number = string.Empty;
-						}
-						*/
-
-
-
 			Queue<string> inputQueue = DumbTokenizer(sanitizedString);
 
-			int functionScope = 0;
 			string number = string.Empty;
 			string parameter = string.Empty;
 			List<char> output = new List<char>();
 			Stack<char> operatorStack = new Stack<char>();
 
-			string next;
-			string current;
+			string next = EndToken;
+			string current = EndToken;
 
 			while (inputQueue.TryDequeue(out current))
 			{
