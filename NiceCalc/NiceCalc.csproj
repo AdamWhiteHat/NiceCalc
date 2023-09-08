@@ -49,8 +49,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="ExtendedNumerics.BigDecimal" Version="2023.207.1303" />
-		<PackageReference Include="ExtendedNumerics.BigRational" Version="2023.179.1529" />
+		<PackageReference Include="ExtendedNumerics.BigDecimal" Version="2023.1000.0.230" />
+		<PackageReference Include="ExtendedNumerics.BigRational" Version="2023.221.2134" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="System.Management" Version="7.0.2" />
 	</ItemGroup>

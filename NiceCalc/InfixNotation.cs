@@ -21,16 +21,87 @@ namespace NiceCalc
 		public static readonly string Operators = "+-*/^";
 		public static readonly string Functions = "⎷|ⅇ[⎿⎾±σγτ!ℙꓑꟼＦＤ⍻⌥⋂⋃";
 
+		/// <summary>
+		/// Tests if a string consists of only digit (numeric) characters.
+		/// Decimal place characters are allowed, as they are part of the number.
+		/// A string that is null or empty fails this test (returns false).
+		/// </summary>		
 		public static bool IsNumeric(string text)
 		{
 			return !string.IsNullOrWhiteSpace(text) && text.All(c => Numbers.Contains(c));
 		}
 
+		/// <summary>
+		/// Tokenizes, Parses and then Evaluates a (mostly) infix numerical expression.
+		/// "Mostly" means it also handles other syntactical constructions
+		/// that are not strictly infix, such as function calls, e.g. "sqrt(42)"
+		/// and the factorial notation, e.g. "42!"
+		/// </summary>
 		public static BigDecimal Evaluate(string infixNotationString)
 		{
 			string functionTokenizedString = TokenizeFunctions(infixNotationString);
 			string postFixNotationString = ShuntingYardConverter.Convert(functionTokenizedString);
 			return PostfixNotation.Evaluate(postFixNotationString);
+		}
+
+		/// <summary>
+		/// Replaces spelled-out function names, e.g. "sqrt(42)"
+		/// into single-character function symbols, e.g. "⎷(42)"
+		/// as well as handle special syntax constructs (factorials).
+		/// </summary>		
+		private static string TokenizeFunctions(string input)
+		{
+			string result = input;
+
+			result = RewriteFactorials(result);
+
+			foreach (var kvp in FunctionTokenDictionary)
+			{
+				result = result.Replace(kvp.Key, kvp.Value, true, CultureInfo.InvariantCulture);
+			}
+			return result;
+		}
+
+		/// <summary>
+		/// Turns factorials: "(2 * 12!) - 12"
+		/// Into function form: "(2 * factorial(12)) - 12"
+		/// </summary>
+		private static string RewriteFactorials(string input)
+		{
+			string result = input;
+			while (result.Contains('!'))
+			{
+				int symbolIndex = result.LastIndexOf('!');
+				int index = symbolIndex;
+
+				if (result[symbolIndex - 1] == ')')
+				{
+					index = result.LastIndexOf('(', symbolIndex - 1);
+					if (index == -1)
+					{
+						throw new Exception(
+												$"Found closed parenthesis ')' next to factorial symbol '!' at index {symbolIndex}, but cannot find the open parenthesis: '('.");
+					}
+
+					result = result.Remove(symbolIndex, 1);
+
+				}
+				else
+				{
+					while (index - 1 >= 0 && Numbers.Contains(result[index - 1]))
+					{
+						index--;
+					}
+
+					result = result.Remove(symbolIndex, 1);
+
+					result = result.Insert(symbolIndex, ")");
+					result = result.Insert(index, "(");
+				}
+
+				result = result.Insert(index, "factorial");
+			}
+			return result;
 		}
 
 		public static int GetParameterCount(char functionToken)
@@ -85,61 +156,6 @@ namespace NiceCalc
 				throw new ParsingException($"Unrecognized function token '{functionToken}' in dictionary {nameof(TokenBinaryRealFunctionDictionary)}.", functionToken);
 			}
 			return TokenBinaryRealFunctionDictionary[functionToken];
-		}
-
-		private static string TokenizeFunctions(string input)
-		{
-			string result = input;
-
-			result = RewriteFactorials(result);
-
-			foreach (var kvp in FunctionTokenDictionary)
-			{
-				result = result.Replace(kvp.Key, kvp.Value, true, CultureInfo.InvariantCulture);
-			}
-			return result;
-		}
-
-		/// <summary>
-		/// Turns factorials: "(2 * 12!) - 12"
-		/// Into function form: "(2 * factorial(12)) - 12"
-		/// </summary>
-		private static string RewriteFactorials(string input)
-		{
-			string result = input;
-			while (result.Contains('!'))
-			{
-				int symbolIndex = result.LastIndexOf('!');
-				int index = symbolIndex;
-
-				if (result[symbolIndex - 1] == ')')
-				{
-					index = result.LastIndexOf('(', symbolIndex - 1);
-					if (index == -1)
-					{
-						throw new Exception(
-												$"Found closed parenthesis ')' next to factorial symbol '!' at index {symbolIndex}, but cannot find the open parenthesis: '('.");
-					}
-
-					result = result.Remove(symbolIndex, 1);
-
-				}
-				else
-				{
-					while (index - 1 >= 0 && Numbers.Contains(result[index - 1]))
-					{
-						index--;
-					}
-
-					result = result.Remove(symbolIndex, 1);
-
-					result = result.Insert(symbolIndex, ")");
-					result = result.Insert(index, "(");
-				}
-
-				result = result.Insert(index, "factorial");
-			}
-			return result;
 		}
 
 		private static readonly Dictionary<string, string> FunctionTokenDictionary = new()
@@ -205,6 +221,10 @@ namespace NiceCalc
 			// === Unary ===
 
 			// Real
+			{ '⎷',      false    },
+			{ '|',      false    },
+			{ '±',      false   },
+			{ '!',      false   },
 			{ 'ⅇ',      false   },
 			{ '[',      false   },
 			{ '⎿',      false   },
@@ -214,10 +234,7 @@ namespace NiceCalc
 			{ 'τ',      false   },
 
 			// BigInteger
-			{ '⎷',      true    },
-			{ '|',      true    },
-			{ '±',      true   },
-			{ '!',      true   },
+			
 			{ 'ℙ',      true    },
 			{ 'ꓑ',      true    },
 			{ 'ꟼ',      true    },
@@ -238,10 +255,10 @@ namespace NiceCalc
 
 		private static readonly Dictionary<char, Func<BigInteger, BigInteger>> TokenUnaryIntegerFunctionDictionary = new()
 		{
-			{ '⎷',  new Func<BigInteger, BigInteger>((i) => i.SquareRoot()) }, // sqrt
-			{ '|',  new Func<BigInteger, BigInteger>((BigInteger i) => BigInteger.Abs(i))},	 // abs	
-			{ '±',  new Func<BigInteger, BigInteger>((i) => i.Sign)},	 // sign
-			{ '!',  new Func<BigInteger, BigInteger>((i) => Maths.Factorial(i))},	 // factorial
+			//{ '⎷',  new Func<BigInteger, BigInteger>((i) => i.SquareRoot()) }, // sqrt
+			//{ '|',  new Func<BigInteger, BigInteger>((BigInteger i) => BigInteger.Abs(i))},	 // abs	
+			//{ '±',  new Func<BigInteger, BigInteger>((i) => i.Sign)},	 // sign
+			//{ '!',  new Func<BigInteger, BigInteger>((i) => Maths.Factorial(i))},	 // factorial
 			{ 'ℙ',  new Func<BigInteger, BigInteger>((i) => Factorization.IsProbablePrime(i)?BigInteger.One:BigInteger.Zero)   },
 			{ 'ꓑ',  new Func<BigInteger, BigInteger>((i) => Factorization.GetNextPrime(i))   },
 			{ 'ꟼ',  new Func<BigInteger, BigInteger>((i) => Factorization.GetPreviousPrime(i))   }
@@ -256,13 +273,17 @@ namespace NiceCalc
 
 		private static readonly Dictionary<char, Func<BigDecimal, BigDecimal>> TokenUnaryRealFunctionDictionary = new()
 		{
-			{ 'ⅇ',  new Func<BigDecimal,BigDecimal>((i) => BigDecimal.Exp((BigInteger)i))},	 // ln
+			{ '⎷',  new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.SquareRoot(i,BigDecimal.Precision)) }, // sqrt
+			{ '|',  new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Abs(i))},	 // abs	
+			{ '±',  new Func<BigDecimal, BigDecimal>((i) =>  i.Sign)},	 // sign
+			{ '!',  new Func<BigDecimal, BigDecimal>((i) => BigDecimalMaths.Factorial(i))},	 // factorial
+			{ 'ⅇ',  new Func<BigDecimal,BigDecimal>((i) => BigDecimal.Exp(i,BigDecimal.Precision))},	 // ln
 			{ '[',  new Func<BigDecimal,BigDecimal>((i) => BigDecimal.Round(i))},	 // round
 			{ '⎿',  new Func<BigDecimal,BigDecimal>((i) => BigDecimal.Truncate(i))}, // truncate
 			{ '⎾',  new Func<BigDecimal,BigDecimal>((i) => BigDecimal.Ceiling(i))}, // ceiling
-			{ 'σ',  new Func<BigDecimal,BigDecimal>((i) => Math.Sin((double)i))},	 // sin
-			{ 'γ',  new Func<BigDecimal,BigDecimal>((i) => Math.Cos((double)i))},	 // cos
-			{ 'τ',  new Func<BigDecimal,BigDecimal>((i) => Math.Tan((double)i))},	 // tan
+			{ 'σ',  new Func<BigDecimal,BigDecimal>((i) => BigDecimal.Sin(i,BigDecimal.Precision))},	 // sin
+			{ 'γ',  new Func<BigDecimal,BigDecimal>((i) => BigDecimal.Cos(i,BigDecimal.Precision))},	 // cos
+			{ 'τ',  new Func<BigDecimal,BigDecimal>((i) => BigDecimal.Tan(i,BigDecimal.Precision))},	 // tan
 		};
 
 		private static readonly Dictionary<char, Func<BigInteger, BigInteger, BigInteger>> TokenBinaryIntegerFunctionDictionary = new()
@@ -273,8 +294,10 @@ namespace NiceCalc
 
 		private static readonly Dictionary<char, Func<BigInteger, BigInteger, BigDecimal>> TokenBinaryRealFunctionDictionary = new()
 		{
+			//{ '⋂',  new Func<BigInteger, BigInteger, BigDecimal>((a, b) => BigInteger.GreatestCommonDivisor( a,b) )}, // gcd
+			//{ '⋃',  new Func<BigInteger, BigInteger, BigDecimal>((a, b) => Maths.LCM( a,b)) } // lcm
 			{ '⌥',  new Func<BigInteger, BigInteger, BigDecimal>((a, b) => BigDecimal.Exp(a) / BigDecimal.Exp(b) ) }, // logn
-			{ '⍻',  new Func<BigInteger, BigInteger, BigDecimal>((a, b) => BigDecimal.NthRoot(new BigDecimal(mantissa: b,exponent:0),(int) a, 15) ) } // nthroot
+			{ '⍻',  new Func<BigInteger, BigInteger, BigDecimal>((a, b) => BigDecimal.NthRoot(new BigDecimal(mantissa: b,exponent:0),(int) a,decimalPlaces:  BigDecimal.Precision) ) } // nthroot
 		};
 	}
 }
