@@ -5,6 +5,8 @@ using System.Numerics;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Input;
+using NiceCalc.Interpreter;
+using NiceCalc.Interpreter.Language;
 
 namespace NiceCalc
 {
@@ -19,12 +21,8 @@ namespace NiceCalc
 
 		private void MainForm_Shown(object sender, System.EventArgs e)
 		{
-			tbInput.PlaceholderText = "Input";
-			tbOutput.PlaceholderText = "Results";
-
-			AutoCompleteStringCollection autoCompleteSource = new AutoCompleteStringCollection();
-			autoCompleteSource.AddRange(new string[]
-				{
+			string[] autocompleteItems = new string[]
+			{
 					"#",
 					"abs",
 					"ceil",
@@ -47,11 +45,10 @@ namespace NiceCalc
 					"sqrt",
 					"tan",
 					"trunc"
-				});
-			tbInput.AutoCompleteCustomSource = autoCompleteSource;
-			tbInput.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-			tbInput.AutoCompleteSource = AutoCompleteSource.CustomSource;
+				};
+			tbInput.AutoCompleteCustomSource = autocompleteItems;
 
+			tbInput.KeyDown += tbInput_KeyDown;
 
 			CurrentSettings = new Settings();
 			CurrentSettings.Load();
@@ -61,32 +58,31 @@ namespace NiceCalc
 
 		private void tbInput_KeyDown(object sender, KeyEventArgs e)
 		{
-			if (
-				e.KeyCode == Keys.F5 ||
-				e.KeyCode == Keys.Enter
-			  )
+			bool executeExpression = false;
+
+			if (e.KeyCode == Keys.F5)
 			{
-				if (CurrentSettings.CtrlEnterForTotal)
-				{
-					if (!(e.Control || e.Shift))
-					{
-						return;
-					}
-				}
-
-				if (e.Control)
-				{
-					return;
-				}
-
-				e.Handled = true;
-				e.SuppressKeyPress = true;
-				ProcessLines(tbInput.Lines);
+				executeExpression = true;
+			}
+			else if ((e.KeyCode == Keys.Enter) && e.Shift)
+			{
+				executeExpression = true;
+			}
+			else if ((e.KeyCode == Keys.Enter) && !(CurrentSettings.CtrlEnterForTotal ^ e.Control))
+			{
+				executeExpression = true;
 			}
 			else if (e.KeyCode == Keys.Escape)
 			{
 				tbInput.Clear();
 				tbOutput.Clear();
+			}
+
+			if (executeExpression)
+			{
+				e.Handled = true;
+				e.SuppressKeyPress = true;
+				ProcessLines(tbInput.Lines);
 			}
 		}
 
@@ -105,9 +101,16 @@ namespace NiceCalc
 
 					try
 					{
-						object total = InfixNotation.Evaluate(line);
+						NumericType type = NumericType.Real;
 
-						tbOutput.AppendText(total.ToString());
+						if (cbUseFractions.Checked)
+						{
+							type = NumericType.Rational;
+						}
+
+						string total = InfixNotation.Evaluate(line, type);
+
+						tbOutput.AppendText(total);
 					}
 					catch (Exception ex)
 					{

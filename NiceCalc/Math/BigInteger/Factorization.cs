@@ -5,7 +5,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NiceCalc
+namespace NiceCalc.Math
 {
 	public static class Factorization
 	{

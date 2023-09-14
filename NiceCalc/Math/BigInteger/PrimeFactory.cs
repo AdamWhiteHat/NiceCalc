@@ -5,7 +5,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NiceCalc
+namespace NiceCalc.Math
 {
 	public static class PrimeFactory
 	{
@@ -65,8 +65,8 @@ namespace NiceCalc
 		public static int GetApproximateNthPrime(int n)
 		{
 			// n*ln( n*e*ln(ln(n)) )
-			double approx = n * Math.Log(n * Math.E * Math.Log(Math.Log(n)));
-			double ceil = Math.Ceiling(approx);
+			double approx = n * System.Math.Log(n * System.Math.E * System.Math.Log(System.Math.Log(n)));
+			double ceil = System.Math.Ceiling(approx);
 			return (int)ceil;
 		}
 

@@ -3,9 +3,8 @@ using System.Linq;
 using System.Numerics;
 using System.Collections.Generic;
 
-namespace NiceCalc
+namespace NiceCalc.Math
 {
-
 	public static class BigIntegerExtensionMethods
 	{
 		public static BigInteger Mod(this BigInteger source, BigInteger mod, bool preferPositive = true)

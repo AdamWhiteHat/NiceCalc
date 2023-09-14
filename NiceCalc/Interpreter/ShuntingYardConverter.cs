@@ -9,31 +9,14 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Security.Permissions;
+using NiceCalc.Interpreter.Language;
 
-namespace NiceCalc
+namespace NiceCalc.Interpreter
 {
 	public static class ShuntingYardConverter
 	{
-		private static readonly string AllowedCharacters = InfixNotation.Numbers + InfixNotation.Operators + InfixNotation.Functions + "()";
-
-		private enum Associativity
-		{
-			Left, Right
-		}
-		private static readonly Dictionary<char, int> PrecedenceDictionary = new()
-		{
-			{'(', 0}, {')', 0},
-			{'+', 1}, {'-', 1},
-			{'*', 2}, {'/', 2},
-			{'^', 3}
-		};
-		private static readonly Dictionary<char, Associativity> AssociativityDictionary = new()
-		{
-			{'+', Associativity.Left}, {'-', Associativity.Left}, {'*', Associativity.Left},{'/', Associativity.Left},
-			{'^', Associativity.Right}
-		};
-
 		private static readonly string EndToken = "{END}";
+		private static readonly string AllowedCharacters = Syntax.Numbers + Syntax.Operators + Syntax.Functions + "()/";
 
 		private static void AddToOutput(List<char> output, params char[] chars)
 		{
@@ -44,22 +27,6 @@ namespace NiceCalc
 					output.Add(c);
 				}
 				output.Add(' ');
-			}
-		}
-
-		private static int GetPrecedence(char c)
-		{
-			if (PrecedenceDictionary.ContainsKey(c))
-			{
-				return PrecedenceDictionary[c];
-			}
-			else if (InfixNotation.Functions.Contains(c))
-			{
-				return 4;
-			}
-			else
-			{
-				throw new ParsingException($"Unknown token '{c}' encountered while trying to determine its precedence.", token: c);
 			}
 		}
 
@@ -76,7 +43,7 @@ namespace NiceCalc
 			List<char> number = new List<char>();
 			foreach (char c in sanitizedInputString)
 			{
-				if (InfixNotation.Numbers.Contains(c))
+				if (Syntax.Numbers.Contains(c))
 				{
 					number.Add(c);
 				}
@@ -92,6 +59,13 @@ namespace NiceCalc
 				}
 			}
 
+			if (number.Any())
+			{
+				string value = new string(number.ToArray());
+				result.Enqueue(value);
+				number.Clear();
+			}
+
 			return result;
 		}
 
@@ -99,15 +73,19 @@ namespace NiceCalc
 		{
 			if (string.IsNullOrWhiteSpace(infixNotationString))
 			{
-				throw new ParsingException("Argument infixNotationString must not be null, empty or whitespace.");
+				return string.Empty; // No-op
 			}
 
-			var unknownCharacters = infixNotationString.Where(c => !AllowedCharacters.Contains(c));
+			string whitepaceSanitized = new string(infixNotationString.ToCharArray().Where(c => !char.IsWhiteSpace(c)).ToArray());
+
+
+			var unknownCharacters = whitepaceSanitized.Where(c => !AllowedCharacters.Contains(c));
 			if (unknownCharacters.Any())
 			{
-				throw new ParsingException($"Argument {nameof(infixNotationString)} contains some unknown tokens: {{ {string.Join(", ", unknownCharacters)} }}.");
+				throw new ParsingException($"Expression contains unknown tokens: {{ {string.Join(", ", unknownCharacters)} }}.");
 			}
-			string sanitizedString = new string(infixNotationString.Where(c => AllowedCharacters.Contains(c)).ToArray());
+
+			string sanitizedString = new string(whitepaceSanitized.Where(c => AllowedCharacters.Contains(c)).ToArray());
 
 			Queue<string> inputQueue = DumbTokenizer(sanitizedString);
 
@@ -123,7 +101,7 @@ namespace NiceCalc
 			{
 				if (!inputQueue.TryPeek(out next)) { next = EndToken; }
 
-				if (InfixNotation.IsNumeric(current))
+				if (Syntax.IsNumeric(current))
 				{
 					AddToOutput(output, current.ToArray());
 				}
@@ -131,15 +109,15 @@ namespace NiceCalc
 				{
 					char c = current[0];
 
-					if (InfixNotation.Numbers.Contains(c))
+					if (Syntax.Numbers.Contains(c))
 					{
 						AddToOutput(output, c);
 					}
-					else if (InfixNotation.Functions.Contains(c))
+					else if (Syntax.Functions.Contains(c))
 					{
 						operatorStack.Push(c);
 					}
-					else if (InfixNotation.Operators.Contains(c))
+					else if (Syntax.Operators.Contains(c))
 					{
 						if (operatorStack.Count > 0)
 						{
@@ -149,11 +127,11 @@ namespace NiceCalc
 								o != '('
 								&&
 								(
-									(AssociativityDictionary[c] == Associativity.Left &&
-									GetPrecedence(c) <= GetPrecedence(o))
+									(Syntax.AssociativityDictionary[c] == Associativity.Left &&
+									Syntax.GetPrecedence(c) <= Syntax.GetPrecedence(o))
 										||
-									(AssociativityDictionary[c] == Associativity.Right &&
-									GetPrecedence(c) < GetPrecedence(o))
+									(Syntax.AssociativityDictionary[c] == Associativity.Right &&
+									Syntax.GetPrecedence(c) < Syntax.GetPrecedence(o))
 								)
 							)
 							{
@@ -208,7 +186,7 @@ namespace NiceCalc
 
 						if (!leftParenthesisFound)
 						{
-							throw new ParsingException("The algebraic string contains mismatched parentheses (missing a left parenthesis).", c, operatorStack);
+							throw new ParsingException("The expression contains mismatched parentheses: Missing a left parenthesis.", c, operatorStack);
 						}
 					}
 					else
@@ -218,24 +196,24 @@ namespace NiceCalc
 				}
 				else
 				{
-					throw new ParsingException($"String '{current}' is not numeric and has a length greater than 1.", token: current, stack: operatorStack);
+					throw new ParsingException($"At this stage in the parsing, all tokens that are not a number value are expected to be a single character long, but a {current.Length} length token was encountered that failed to parse into a number: '{current}' (maybe because it contains a non-numeric value?)", token: current, stack: operatorStack);
 				}
 			} // while
 
 
 			//
-			// Syntax check
+			// Pop off last items.
 			//
 			while (operatorStack.Count > 0)
 			{
 				char o = operatorStack.Pop();
 				if (o == '(')
 				{
-					throw new ParsingException("Mismatched parentheses (extra left parenthesis).", token: o, stack: operatorStack);
+					throw new ParsingException("The expression contains an extraneous left parenthesis.", token: o, stack: operatorStack);
 				}
 				else if (o == ')')
 				{
-					throw new ParsingException("Mismatched parentheses (extra right parenthesis).", token: o, stack: operatorStack);
+					throw new ParsingException("The expression contains an extraneous right parenthesis.", token: o, stack: operatorStack);
 				}
 				else
 				{

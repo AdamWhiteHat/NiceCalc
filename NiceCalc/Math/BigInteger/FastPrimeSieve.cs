@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Management;
 
-namespace NiceCalc
+namespace NiceCalc.Math
 {
 	public class FastPrimeSieve : IEnumerable<BigInteger>
 	{

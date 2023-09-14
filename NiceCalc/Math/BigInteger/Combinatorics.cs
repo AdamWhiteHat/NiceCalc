@@ -5,7 +5,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NiceCalc
+namespace NiceCalc.Math
 {
 	public static class Combinatorics
 	{
@@ -13,15 +13,15 @@ namespace NiceCalc
 		{
 			if (n == k)
 			{
-				return Maths.Factorial(n);
+				return BigIntegerMaths.Factorial(n);
 			}
 
 			//      n!
 			//  ----------
 			//  k!(n − k)!
 			return BigInteger.Divide(
-						Maths.Factorial(n),
-						BigInteger.Multiply(Maths.Factorial(k), Maths.Factorial(n - k))
+						BigIntegerMaths.Factorial(n),
+						BigInteger.Multiply(BigIntegerMaths.Factorial(k), BigIntegerMaths.Factorial(n - k))
 					);
 		}
 

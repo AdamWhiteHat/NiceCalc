@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0-windows8.0</TargetFramework>
+		<TargetFramework>net5.0-windows8.0</TargetFramework>
 		<OutputType>WinExe</OutputType>
 		<UseWindowsForms>True</UseWindowsForms>
 		<StartupObject>NiceCalc.Program</StartupObject>
@@ -50,7 +50,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="ExtendedNumerics.BigDecimal" Version="2023.1000.0.230" />
-		<PackageReference Include="ExtendedNumerics.BigRational" Version="2023.221.2134" />
+		<PackageReference Include="ExtendedNumerics.BigRational" Version="2023.1000.1.255" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="System.Management" Version="7.0.2" />
 	</ItemGroup>

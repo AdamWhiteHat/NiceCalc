@@ -3,9 +3,9 @@ using System.Numerics;
 using System.Collections.Generic;
 using ExtendedNumerics;
 
-namespace NiceCalc
+namespace NiceCalc.Math
 {
-	public static class Maths
+	public static class BigIntegerMaths
 	{
 		/// <summary>
 		/// Exponentiation by squaring, using arbitrarily large signed integers
@@ -64,6 +64,10 @@ namespace NiceCalc
 		/// </summary>
 		public static BigInteger Factorial(BigInteger n)
 		{
+			if (n == BigInteger.Zero || n == BigInteger.One)
+			{
+				return 1;
+			}
 			return MultiplyRange(2, n); //Enumerable.Range(2, n-1).Product();
 		}
 
@@ -78,68 +82,5 @@ namespace NiceCalc
 		}
 	}
 
-	public static class BigDecimalMaths
-	{
-		/// <summary>
-		/// Exponentiation by squaring, using arbitrarily large signed integers
-		/// </summary>
-		public static BigDecimal Pow(BigDecimal @base, BigDecimal exponent)
-		{
-			BigDecimal b = BigDecimal.Abs(@base);
-			BigDecimal exp = BigDecimal.Abs(exponent);
-			BigDecimal result = BigDecimal.One;
-			while (exp > 0)
-			{
-				if ((exp %2) == 1) // If exponent is odd (&1 == %2)
-				{
-					result = (result * b);
-					exp -= 1;
-					if (exp == 0) { break; }
-				}
 
-				b = (b * b);
-				exp /= 2; // exp /= 2;
-			}
-			return result;
-		}
-
-		/// <summary>
-		/// Exponentiation by squaring, modulus some number (as needed)
-		/// </summary>
-		public static BigDecimal PowerMod(BigDecimal @base, BigDecimal exponent, BigDecimal modulus)
-		{
-			BigDecimal result = BigDecimal.One;
-			while (exponent > 0)
-			{
-				if ((exponent %2) == 1) // If exponent is odd
-				{
-					result = (result * @base).Mod(modulus);
-					exponent -= 1;
-					if (exponent == 0) { break; }
-				}
-
-				@base = (@base * @base).Mod(modulus);
-				exponent /= 2; // exponent /= 2;
-			}
-			return result.Mod(modulus);
-		}
-
-		/// <summary>
-		/// Factorial function: n! = 1 * 2 * ... * n-1 * n
-		/// </summary>
-		public static BigDecimal Factorial(BigDecimal n)
-		{
-			return MultiplyRange(2, n); //Enumerable.Range(2, n-1).Product();
-		}
-
-		private static BigDecimal MultiplyRange(BigDecimal from, BigDecimal to)
-		{
-			BigDecimal diff = to - from;
-			if (diff == 1) { return from * to; }
-			if (diff == 0) { return from; }
-
-			BigDecimal half = (from + to) / 2;
-			return BigDecimal.Multiply(MultiplyRange(from, half), MultiplyRange(half + 1, to));
-		}
-	}
 }
