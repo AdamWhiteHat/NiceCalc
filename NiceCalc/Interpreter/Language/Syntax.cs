@@ -21,9 +21,16 @@ namespace NiceCalc.Interpreter.Language
 	{
 		public static readonly string Numbers = "0123456789.";
 		public static readonly string Operators = "+-*/%^";
-		public static readonly string Functions = "⎷|ⅇ[⎿⎾±σγτ!ℙꓑꟼＦＤ⍻⌥⋂⋃";
+		public static readonly string Functions = "⎷|Əⅇ[⎿⎾±σγτ!ℙꓑꟼＦＤ⍻⌥⋂⋃∑∏πe";
+		public static readonly char AssignmentOperator = '=';
+		public static readonly char Sum = '∑';
+		public static readonly char Product = '∏';
+		public static readonly char Pi = 'π';
+		public static readonly char E = 'e';
 
-		public static readonly Dictionary<char, int> PrecedenceDictionary = new()
+		public static readonly List<string> ReservedIdentifiers;
+
+		public static readonly Dictionary<char, int> PrecedenceDictionary = new Dictionary<char, int>()
 		{
 			{ '(', 0 },
 			{ ')', 0 },
@@ -31,10 +38,11 @@ namespace NiceCalc.Interpreter.Language
 			{ '-', 1 },
 			{ '*', 2 },
 			{ '/', 2 },
+			{ '%', 2 },
 			{ '^', 3 }
 		};
 
-		public static readonly Dictionary<char, Associativity> AssociativityDictionary = new()
+		public static readonly Dictionary<char, Associativity> AssociativityDictionary = new Dictionary<char, Associativity>()
 		{
 			{ '+', Associativity.Left },
 			{ '-', Associativity.Left },
@@ -57,6 +65,15 @@ namespace NiceCalc.Interpreter.Language
 			{
 				throw new ParsingException($"Precedence dictionary does not contain an entry for token: '{c}'", token: c);
 			}
+		}
+
+		static Syntax()
+		{
+			List<string> reserved = new List<string>();
+			reserved.AddRange(NiceCalc.Execution.Functions.FunctionTokenDictionary.Keys);
+			reserved.AddRange(Functions.ToCharArray().Select(c => c.ToString()));
+			reserved.AddRange(PrecedenceDictionary.Keys.Select(c => c.ToString()));
+			ReservedIdentifiers = reserved;
 		}
 
 		/// <summary>

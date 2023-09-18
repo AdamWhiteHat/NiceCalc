@@ -14,7 +14,7 @@ namespace NiceCalc
 	public class Settings : INotifyPropertyChanged
 	{
 		public static string DefaultFilename = "Settings.json";
-		public event PropertyChangedEventHandler? PropertyChanged;
+		public event PropertyChangedEventHandler PropertyChanged;
 
 		public bool CopyInputToOutput
 		{
@@ -43,6 +43,20 @@ namespace NiceCalc
 			}
 		}
 		private bool _ctrlEnterForTotal;
+
+		public bool PreferFractionsResult
+		{
+			get { return _preferFractionsResult; }
+			set
+			{
+				if (_preferFractionsResult != value)
+				{
+					_preferFractionsResult = value;
+					OnPropertyChanged();
+				}
+			}
+		}
+		private bool _preferFractionsResult;
 
 		public int Precision
 		{

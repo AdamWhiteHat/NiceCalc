@@ -7,12 +7,21 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using NiceCalc.Interpreter;
 using NiceCalc.Interpreter.Language;
+using NiceCalc.Execution;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
+using System.Management;
 
 namespace NiceCalc
 {
 	public partial class MainForm : Form
 	{
+		public CalculatorSession CalculatorSession;
+
 		private Settings CurrentSettings;
+		private ObservableDictionary<string, string> _variables;
 
 		public MainForm()
 		{
@@ -38,6 +47,7 @@ namespace NiceCalc
 					"logn",
 					"nextprime",
 					"nthroot",
+					"pi",
 					"previousprime",
 					"round",
 					"sign",
@@ -74,8 +84,11 @@ namespace NiceCalc
 			}
 			else if (e.KeyCode == Keys.Escape)
 			{
-				tbInput.Clear();
-				tbOutput.Clear();
+				if (!tbInput.IsSuggestionBoxVisible)
+				{
+					tbInput.Clear();
+					tbOutput.Clear();
+				}
 			}
 
 			if (executeExpression)
@@ -86,47 +99,117 @@ namespace NiceCalc
 			}
 		}
 
+
 		private void ProcessLines(string[] lines)
 		{
 			tbOutput.Clear();
 			tbOutput.ClearUndo();
+
+			if (CalculatorSession == null)
+			{
+				CalculatorSession = new CalculatorSession(cbPreferFractionsResult.Checked ? NumericType.Rational : NumericType.Real);
+
+				listBoxVariables.Items.Clear();
+
+				CalculatorSession.BindToList(this.listBoxVariables.Items);
+
+
+				//listBoxVariables.DataBindings.Add(new Binding("Items", CalculatorSession.Variables, null));
+				//listBoxVariables.DataSource = CalculatorSession.Variables.GetList(); // new BindingSource((IEnumerable<KeyValuePair<string, string>>)CalculatorSession.Variables, null);
+				//listBoxVariables.FormattingEnabled = true;
+				//listBoxVariables.Format += ListBoxVariables_Format;
+
+				//_variables = calculatorSessionBindingSource.List;
+
+			}
+
 			foreach (string line in lines)
 			{
 				if (!string.IsNullOrWhiteSpace(line))
 				{
-					if (CurrentSettings.CopyInputToOutput)
+					List<string> expressions = new List<string>();
+
+					bool multiExpressionedLine = line.Contains(';');
+					if (multiExpressionedLine)
 					{
-						tbOutput.AppendText(line + " = ");
+						expressions.AddRange(line.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
+					}
+					else
+					{
+						expressions.Add(line);
 					}
 
-					try
+					foreach (string expression in expressions)
 					{
-						NumericType type = NumericType.Real;
+						int leftSpaces = expression.AsEnumerable().TakeWhile(c => char.IsWhiteSpace(c)).Count();
+						int rightSpaces = expression.AsEnumerable().Reverse().TakeWhile(c => char.IsWhiteSpace(c)).Count();
 
-						if (cbUseFractions.Checked)
+						if (!multiExpressionedLine && CurrentSettings.CopyInputToOutput)
 						{
-							type = NumericType.Rational;
+							tbOutput.AppendText(expression + " = ");
 						}
 
-						string total = InfixNotation.Evaluate(line, type);
+						try
+						{
+							string result = CalculatorSession.Eval(expression);
 
-						tbOutput.AppendText(total);
-					}
-					catch (Exception ex)
-					{
-						tbOutput.AppendText(ex.ToString());
+							if (leftSpaces > 0)
+							{
+								tbOutput.AppendText(new string(Enumerable.Repeat(' ', leftSpaces).ToArray()));
+							}
+							tbOutput.AppendText(result);
+							if (rightSpaces > 0)
+							{
+								tbOutput.AppendText(new string(Enumerable.Repeat(' ', rightSpaces).ToArray()));
+							}
+
+							if (multiExpressionedLine)
+							{
+								tbOutput.AppendText(";");
+							}
+						}
+						catch (Exception ex)
+						{
+							tbOutput.AppendText(ex.ToString());
+						}
 					}
 				}
 				tbOutput.AppendText(Environment.NewLine);
 			}
 		}
 
-		void BtnFunctionClick(object sender, EventArgs e)
+		private void ListBoxVariables_Format(object sender, ListControlConvertEventArgs e)
+		{
+			KeyValuePair<string, string> item = (KeyValuePair<string, string>)e.ListItem;
+			e.Value = string.Format("{0}({1})", item.Key, item.Value);
+		}
+
+		void BtnFunctionSimple_Click(object sender, EventArgs e)
 		{
 			Button btn = (Button)sender;
 
 			int start = tbInput.SelectionStart;
-			int end = tbInput.SelectionStart + tbInput.SelectionLength;
+			int end = start + tbInput.SelectionLength;
+
+			string text = tbInput.Text;
+
+			int insertionLength = btn.Text.Length;
+			text = text.Insert(end, btn.Text);
+
+			tbInput.Text = text;
+
+			tbInput.SelectionStart = end + insertionLength;
+			tbInput.SelectionLength = 0;
+
+			tbInput.Focus();
+		}
+
+		void BtnFunctionParameterize_Click(object sender, EventArgs e)
+		{
+			Button btn = (Button)sender;
+
+			int start = tbInput.SelectionStart;
+			int end = start + tbInput.SelectionLength;
 
 			string text = tbInput.Text;
 
@@ -134,6 +217,26 @@ namespace NiceCalc
 			text = text.Insert(start, btn.Text + "(");
 
 			tbInput.Text = text;
+
+			int restoreLocation = text.IndexOf('(', start) + 1;
+			tbInput.SelectionStart = restoreLocation;
+			tbInput.SelectionLength = 0;
+
+			tbInput.Focus();
+		}
+
+		private void cbExpandPanel_CheckedChanged(object sender, EventArgs e)
+		{
+			if (cbExpandPanel.Checked)
+			{
+				groupVariables.Size = groupVariables.MaximumSize;
+				cbExpandPanel.ImageIndex = 1;
+			}
+			else
+			{
+				groupVariables.Size = groupVariables.MinimumSize;
+				cbExpandPanel.ImageIndex = 0;
+			}
 		}
 
 		#region CurrentSettings <=> UI Controls
@@ -147,6 +250,8 @@ namespace NiceCalc
 
 			cbCopyInputToOutput.Checked = currentSettings.CopyInputToOutput;
 			cbCtrlEnterForTotal.Checked = currentSettings.CtrlEnterForTotal;
+			cbPreferFractionsResult.Checked = currentSettings.PreferFractionsResult;
+
 			numericPrecision.Value = currentSettings.Precision;
 			BigDecimal.Precision = currentSettings.Precision;
 
@@ -158,32 +263,43 @@ namespace NiceCalc
 		{
 			cbCopyInputToOutput.CheckedChanged += CbCopyInputToOutput_CheckedChanged;
 			cbCtrlEnterForTotal.CheckedChanged += CbCtrlEnterForTotal_CheckedChanged;
-			numericPrecision.ValueChanged += NumericPrecision_ValueChanged; ;
+			cbPreferFractionsResult.CheckedChanged += CbUseFractions_CheckedChanged;
+			numericPrecision.ValueChanged += NumericPrecision_ValueChanged;
 			FormClosing += MainForm_FormClosing;
 		}
 
-		private void CbCopyInputToOutput_CheckedChanged(object? sender, EventArgs e)
+		private void CbUseFractions_CheckedChanged(object sender, EventArgs e)
+		{
+			CurrentSettings.PreferFractionsResult = cbPreferFractionsResult.Checked;
+			CalculatorSession.PreferredOutputFormat = cbPreferFractionsResult.Checked ? NumericType.Rational : NumericType.Real;
+		}
+
+		private void CbCopyInputToOutput_CheckedChanged(object sender, EventArgs e)
 		{
 			CurrentSettings.CopyInputToOutput = cbCopyInputToOutput.Checked;
 		}
 
-		private void CbCtrlEnterForTotal_CheckedChanged(object? sender, EventArgs e)
+		private void CbCtrlEnterForTotal_CheckedChanged(object sender, EventArgs e)
 		{
 			CurrentSettings.CtrlEnterForTotal = cbCtrlEnterForTotal.Checked;
 		}
 
-		private void NumericPrecision_ValueChanged(object? sender, EventArgs e)
+		private void NumericPrecision_ValueChanged(object sender, EventArgs e)
 		{
 			CurrentSettings.Precision = (int)numericPrecision.Value;
 			BigDecimal.Precision = CurrentSettings.Precision;
 		}
 
-		private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
+		private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
 		{
 			CurrentSettings.WindowLocationX = this.Location.X;
 			CurrentSettings.WindowLocationY = this.Location.Y;
 			CurrentSettings.WindowWidth = this.Width;
 			CurrentSettings.WindowHeight = this.Height;
+
+			CurrentSettings.CopyInputToOutput = cbCopyInputToOutput.Checked;
+			CurrentSettings.CtrlEnterForTotal = cbCtrlEnterForTotal.Checked;
+			CurrentSettings.PreferFractionsResult = cbPreferFractionsResult.Checked;
 
 			int rightPanelWidth = splitContainer_LeftRight.Size.Width - splitContainer_LeftRight.SplitterDistance - splitContainer_LeftRight.SplitterWidth;
 			CurrentSettings.RightPanelWidth = rightPanelWidth;

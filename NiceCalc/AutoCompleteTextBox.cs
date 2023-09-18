@@ -12,11 +12,7 @@ namespace NiceCalc
 {
 	public class AutoCompleteTextBox : RichTextBox
 	{
-		private bool _isAdded;
-		private ListBox _listBox;
-		private string _formerValue;
-		private static readonly char[] Delimiters = new char[] { ' ', '\r', '\n', '\t', '(', ')' };
-		//public List<string> SelectedValues => new List<string>(Text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
+		public bool IsSuggestionBoxVisible { get { return _listBox.Visible; } }
 
 		public string[] AutoCompleteCustomSource
 		{
@@ -24,6 +20,12 @@ namespace NiceCalc
 			set { _autoCompleteCustomSource = value; }
 		}
 		private string[] _autoCompleteCustomSource;
+
+		private bool _isAdded;
+		private ListBox _listBox;
+		private string _formerValue;
+		private static readonly char[] Delimiters = new char[] { ' ', '\r', '\n', '\t', '(', ')' };
+		//public List<string> SelectedValues => new List<string>(Text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
 
 		public AutoCompleteTextBox()
 			: base()
@@ -46,6 +48,7 @@ namespace NiceCalc
 
 			KeyDown += this_KeyDown;
 			KeyUp += this_KeyUp;
+
 		}
 
 		private void this_KeyDown(object sender, KeyEventArgs e)
@@ -59,6 +62,13 @@ namespace NiceCalc
 			{
 				switch (e.KeyCode)
 				{
+					case Keys.Escape:
+						{
+							e.Handled = true;
+							e.SuppressKeyPress = true;
+							HideListBox();
+							return;
+						}
 					case Keys.D9:
 						{
 							if (e.Shift)
@@ -77,7 +87,9 @@ namespace NiceCalc
 							int pos = SelectionStart;
 							this.Text = this.Text.Insert(pos, "()");
 							SelectionStart = pos + 1;
+
 							e.SuppressKeyPress = true;
+							e.Handled = true;
 							break;
 						}
 					case Keys.Down:
@@ -96,7 +108,22 @@ namespace NiceCalc
 
 		private void this_KeyUp(object sender, KeyEventArgs e)
 		{
-			UpdateListBox();
+			char pressedKey = (char)e.KeyValue;
+
+			if (_listBox.Visible)
+			{
+				if (e.KeyCode == Keys.Escape)
+				{
+					e.Handled = true;
+					e.SuppressKeyPress = true;
+					HideListBox();
+					return;
+				}
+			}
+			else if (e.KeyCode >= Keys.A && e.KeyCode <= Keys.Z)
+			{
+				UpdateListBox();
+			}
 		}
 
 		internal bool EnableCustomAutoCompleteListbox()
@@ -106,7 +133,7 @@ namespace NiceCalc
 					&& AutoCompleteCustomSource.Length > 0);
 		}
 
-		private void ResetListBox()
+		private void HideListBox()
 		{
 			_listBox.Visible = false;
 		}
@@ -120,11 +147,25 @@ namespace NiceCalc
 		{
 			switch (keyData)
 			{
+				case Keys.Escape:
 				case Keys.Tab:
 					return true;
 				default:
 					return base.IsInputKey(keyData);
 			}
+		}
+
+		protected override bool ProcessCmdKey(ref Message m, Keys keyData)
+		{
+			if (keyData == Keys.Escape)
+			{
+				if (_listBox.Visible)
+				{
+					_listBox.Visible = false;
+					return true;
+				}
+			}
+			return base.ProcessCmdKey(ref m, keyData);
 		}
 
 		private void listBox_KeyPress(object sender, KeyEventArgs e)
@@ -133,7 +174,14 @@ namespace NiceCalc
 			{
 				return;
 			}
-			if (e.KeyCode == Keys.Enter)
+			if (e.KeyCode == Keys.Escape)
+			{
+				e.Handled = true;
+				e.SuppressKeyPress = true;
+				HideListBox();
+				return;
+			}
+			else if (e.KeyCode == Keys.Enter)
 			{
 				InsertSuggestedWord((string)_listBox.SelectedItem);
 			}
@@ -219,12 +267,12 @@ namespace NiceCalc
 				}
 				else
 				{
-					ResetListBox();
+					HideListBox();
 				}
 			}
 			else
 			{
-				ResetListBox();
+				HideListBox();
 			}
 		}
 
@@ -255,8 +303,10 @@ namespace NiceCalc
 			Text = updatedText;
 			SelectionStart = firstPart.Length;
 
-			ResetListBox();
+			HideListBox();
 			_formerValue = Text;
 		}
+
+
 	}
 }

@@ -20,13 +20,31 @@ namespace NiceCalc.Execution
 			return TokenParameterCountDictionary[functionToken];
 		}
 
-		public static bool IsFunctionIntegers(char functionToken)
+		public static bool IsStringFunction(char functionToken)
 		{
-			if (!TokenParameterIntegerDictionary.ContainsKey(functionToken))
+			return TokenUnaryStringFunctionDictionary.ContainsKey(functionToken);
+		}
+
+		public static bool IsIntegerFunction(char functionToken)
+		{
+			if (TokenUnaryIntegerFunctionDictionary.ContainsKey(functionToken))
 			{
-				throw new ParsingException($"Unrecognized function token '{functionToken}' in dictionary {nameof(TokenParameterIntegerDictionary)}.", functionToken);
+				return true;
 			}
-			return TokenParameterIntegerDictionary[functionToken];
+			if (TokenBinaryIntegerFunctionDictionary.ContainsKey(functionToken))
+			{
+				return true;
+			}
+			return false;
+		}
+
+		public static Func<BigInteger, string> GetUnaryStringFunction(char functionToken)
+		{
+			if (!TokenUnaryStringFunctionDictionary.ContainsKey(functionToken))
+			{
+				throw new ParsingException($"Unrecognized function token '{functionToken}' in dictionary {nameof(TokenUnaryStringFunctionDictionary)}.", functionToken);
+			}
+			return TokenUnaryStringFunctionDictionary[functionToken];
 		}
 
 		public static Func<BigInteger, BigInteger> GetUnaryIntegerFunction(char functionToken)
@@ -47,11 +65,12 @@ namespace NiceCalc.Execution
 			return TokenBinaryIntegerFunctionDictionary[functionToken];
 		}
 
-		public static readonly Dictionary<string, string> FunctionTokenDictionary = new()
+		public static readonly Dictionary<string, string> FunctionTokenDictionary = new Dictionary<string, string>()
 		{
 			{ "sqrt", "⎷" },
 			{ "abs", "|" },
-			{ "ln", "ⅇ" },
+			{ "ln", "Ə" },
+			{ "exp", "ⅇ" },
 			{ "round", "[" },
 			{ "floor", "⎿" },
 			{ "truncate", "⎿" },
@@ -75,13 +94,18 @@ namespace NiceCalc.Execution
 			{ "nthroot", "⍻" },
 			{ "logn", "⌥" },
 			{ "gcd", "⋂" },
-			{ "lcm", "⋃" }
+			{ "lcm", "⋃" },
+			{ "sum", "∑" },
+			{ "product", "∏" },
+			{ "pi", "π" },
+			//{ "", "e" }
 		};
 
-		private static readonly Dictionary<char, int> TokenParameterCountDictionary = new()
+		private static readonly Dictionary<char, int> TokenParameterCountDictionary = new Dictionary<char, int>()
 		{
 			{ '⎷', 1 },
 			{ '|', 1 },
+			{ 'Ə', 1 },
 			{ 'ⅇ', 1 },
 			{ '[', 1 },
 			{ '⎿', 1 },
@@ -99,62 +123,32 @@ namespace NiceCalc.Execution
 
 			{ '⍻', 2 },
 			{ '⌥', 2 },
-			{ '⋂', 2 },
-			{ '⋃', 2 }
+
+			// 0 parameters means just that. Generally its the pi symbol or e, and expects a constant value.
+			{ 'π', 0 },
+			{ 'e', 0 },
+
+			// Meaning 2 or more parameters
+			{ '⋂', -1 },
+			{ '⋃', -1 },
+			{ '∑', -1 },
+			{ '∏', -1 }
 		};
 
-		private static readonly Dictionary<char, bool> TokenParameterIntegerDictionary = new()
-		{
-			// === Unary ===
-
-			// Real
-			{ '⎷', false },
-			{ '|', false },
-			{ '±', false },
-			{ '!', false },
-			{ 'ⅇ', false },
-			{ '[', false },
-			{ '⎿', false },
-			{ '⎾', false },
-			{ 'σ', false },
-			{ 'γ', false },
-			{ 'τ', false },
-
-			// BigInteger
-
-			{ 'ℙ', true },
-			{ 'ꓑ', true },
-			{ 'ꟼ', true },
-
-			// === Binary ===
-			// Real
-			{ '⍻', false },
-			{ '⌥', false },
-
-			// BigInteger
-			{ '⋂', true },
-			{ '⋃', true },
-
-			// BigInteger, but Returns a string
-			{ 'Ｆ', true },
-			{ 'Ｄ', true },
-		};
-
-		private static readonly Dictionary<char, Func<BigInteger, BigInteger>> TokenUnaryIntegerFunctionDictionary = new()
+		private static readonly Dictionary<char, Func<BigInteger, BigInteger>> TokenUnaryIntegerFunctionDictionary = new Dictionary<char, Func<BigInteger, BigInteger>>()
 		{
 			{ 'ℙ', new Func<BigInteger, BigInteger>((BigInteger i) => Factorization.IsProbablePrime(i) ? BigInteger.One : BigInteger.Zero) },
 			{ 'ꓑ', new Func<BigInteger, BigInteger>((BigInteger i) => Factorization.GetNextPrime(i)) },
 			{ 'ꟼ', new Func<BigInteger, BigInteger>((BigInteger i) => Factorization.GetPreviousPrime(i)) }
-
 		};
 
-		private static readonly Dictionary<char, Func<BigInteger, string>> TokenUnaryStringFunctionDictionary = new()
+		private static readonly Dictionary<char, Func<BigInteger, string>> TokenUnaryStringFunctionDictionary = new Dictionary<char, Func<BigInteger, string>>()
 		{
 			{ 'Ｆ', new Func<BigInteger, string>((BigInteger i) => Factorization.GetPrimeFactorizationString(i)) },
-			{ 'Ｄ', new Func<BigInteger, string>((BigInteger i) => $"({string.Join(", ", Factorization.GetDivisors(i))}") }
+			{ 'Ｄ', new Func<BigInteger, string>((BigInteger i) => $"({string.Join(", ", Factorization.GetDivisors(i))})") }
 		};
 
-		private static readonly Dictionary<char, Func<BigInteger, BigInteger, BigInteger>> TokenBinaryIntegerFunctionDictionary = new()
+		private static readonly Dictionary<char, Func<BigInteger, BigInteger, BigInteger>> TokenBinaryIntegerFunctionDictionary = new Dictionary<char, Func<BigInteger, BigInteger, BigInteger>>()
 		{
 			{ '⋂', new Func<BigInteger, BigInteger, BigInteger>((BigInteger a, BigInteger b) => BigInteger.GreatestCommonDivisor(a, b)) }, // gcd
 			{ '⋃', new Func<BigInteger, BigInteger, BigInteger>((BigInteger a, BigInteger b) => BigIntegerMaths.LCM(a, b)) } // lcm

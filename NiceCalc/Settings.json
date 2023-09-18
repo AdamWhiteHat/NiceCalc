@@ -1,6 +1,7 @@
 {
     "CopyInputToOutput": true,
     "CtrlEnterForTotal": false,
+    "PreferFractionsResult": false,
     "Precision": 50,
     "RightPanelWidth": 180,
     "WindowWidth": 705,

@@ -27,12 +27,10 @@ namespace NiceCalc.Interpreter
 		/// </summary>
 		public static string Evaluate(string infixNotationString, NumericType type)
 		{
-			
 			string functionTokenizedString = TokenizeFunctions(infixNotationString);
-			string postFixNotationString = ShuntingYardConverter.Convert(functionTokenizedString);
+			Queue<string> postFixNotationString = ShuntingYardConverter.Convert(functionTokenizedString);
 			string result = PostfixNotation.Evaluate(postFixNotationString, type);
-			return result.Replace(" ", "").Replace("/", " / ");
-
+			return result.Replace("/", " / ");
 		}
 
 		/// <summary>
@@ -48,7 +46,7 @@ namespace NiceCalc.Interpreter
 
 			foreach (var kvp in Functions.FunctionTokenDictionary)
 			{
-				result = result.Replace(kvp.Key, kvp.Value, true, CultureInfo.InvariantCulture);
+				result = result.Replace(kvp.Key, kvp.Value);
 			}
 			return result;
 		}
@@ -94,8 +92,5 @@ namespace NiceCalc.Interpreter
 			}
 			return result;
 		}
-
-
-
 	}
 }

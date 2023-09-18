@@ -57,14 +57,14 @@ namespace NiceCalc.Execution.Implementation
 			'^'
 		};
 
-		private static readonly Dictionary<char, Func<Fraction, Fraction>> TokenUnaryRealFunctionDictionary = new()
+		private static readonly Dictionary<char, Func<Fraction, Fraction>> TokenUnaryRealFunctionDictionary = new Dictionary<char, Func<Fraction, Fraction>>()
 		{
 			{ '⎷', new Func<Fraction, Fraction>((Fraction i) => Fraction.Sqrt(i)) }, // sqrt
 			{ '|', new Func<Fraction, Fraction>((Fraction i) => Fraction.Abs(i)) },  // abs	
 			{ '±', new Func<Fraction, Fraction>((Fraction i) => i.Sign) },     // sign
 		};
 
-		private static readonly Dictionary<char, Func<BigInteger, BigInteger, Fraction>> TokenBinaryRealFunctionDictionary = new()
+		private static readonly Dictionary<char, Func<BigInteger, BigInteger, Fraction>> TokenBinaryRealFunctionDictionary = new Dictionary<char, Func<BigInteger, BigInteger, Fraction>>()
 		{
 			{ '⍻', new Func<BigInteger, BigInteger, Fraction>((BigInteger a, BigInteger b) => Fraction.NthRoot(b, a, BigDecimal.Precision)) } // nthroot
 		};

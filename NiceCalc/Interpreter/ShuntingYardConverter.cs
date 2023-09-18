@@ -10,23 +10,24 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Security.Permissions;
 using NiceCalc.Interpreter.Language;
+using System.Runtime.Remoting.Metadata.W3cXsd2001;
 
 namespace NiceCalc.Interpreter
 {
 	public static class ShuntingYardConverter
 	{
-		private static readonly string EndToken = "{END}";
-		private static readonly string AllowedCharacters = Syntax.Numbers + Syntax.Operators + Syntax.Functions + "()/";
+		private static readonly string AllowedCharacters = Syntax.Numbers + Syntax.Operators + Syntax.Functions + "(,)/";
 
-		private static void AddToOutput(List<char> output, params char[] chars)
+		private static void AddToOutput(Queue<string> output, char value)
 		{
-			if (chars != null && chars.Length > 0)
+			AddToOutput(output, value.ToString());
+		}
+
+		private static void AddToOutput(Queue<string> output, string value)
+		{
+			if (value != null && value.Length > 0)
 			{
-				foreach (char c in chars)
-				{
-					output.Add(c);
-				}
-				output.Add(' ');
+				output.Enqueue(value);
 			}
 		}
 
@@ -69,15 +70,14 @@ namespace NiceCalc.Interpreter
 			return result;
 		}
 
-		public static string Convert(string infixNotationString)
+		public static Queue<string> Convert(string infixNotationString)
 		{
 			if (string.IsNullOrWhiteSpace(infixNotationString))
 			{
-				return string.Empty; // No-op
+				return new Queue<string>(); ; // No-op
 			}
 
 			string whitepaceSanitized = new string(infixNotationString.ToCharArray().Where(c => !char.IsWhiteSpace(c)).ToArray());
-
 
 			var unknownCharacters = whitepaceSanitized.Where(c => !AllowedCharacters.Contains(c));
 			if (unknownCharacters.Any())
@@ -87,23 +87,19 @@ namespace NiceCalc.Interpreter
 
 			string sanitizedString = new string(whitepaceSanitized.Where(c => AllowedCharacters.Contains(c)).ToArray());
 
+			Queue<string> output = new Queue<string>();
+			Stack<char> operatorStack = new Stack<char>();
 			Queue<string> inputQueue = DumbTokenizer(sanitizedString);
 
-			string number = string.Empty;
-			string parameter = string.Empty;
-			List<char> output = new List<char>();
-			Stack<char> operatorStack = new Stack<char>();
-
-			string next = EndToken;
-			string current = EndToken;
-
-			while (inputQueue.TryDequeue(out current))
+			string current = null;
+			while (inputQueue.Any())
 			{
-				if (!inputQueue.TryPeek(out next)) { next = EndToken; }
+				current = inputQueue.Dequeue();
+
 
 				if (Syntax.IsNumeric(current))
 				{
-					AddToOutput(output, current.ToArray());
+					AddToOutput(output, current);
 				}
 				else if (current.Length == 1)
 				{
@@ -172,15 +168,15 @@ namespace NiceCalc.Interpreter
 						bool leftParenthesisFound = false;
 						while (operatorStack.Count > 0)
 						{
-							char o = operatorStack.Pop();
-							if (o == '(')
+							char op = operatorStack.Pop();
+							if (op == '(')
 							{
 								leftParenthesisFound = true;
 								break;
 							}
 							else
 							{
-								AddToOutput(output, o);
+								AddToOutput(output, op);
 							}
 						}
 
@@ -221,7 +217,7 @@ namespace NiceCalc.Interpreter
 				}
 			}
 
-			return new string(output.ToArray());
+			return output;
 		}
 
 

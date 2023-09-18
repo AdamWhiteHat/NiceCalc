@@ -38,13 +38,14 @@ namespace NiceCalc.Execution.Implementation
 			return TokenBinaryOperationDictionary[operationToken];
 		}
 
-		private static readonly Dictionary<char, Func<BigDecimal, BigDecimal>> TokenUnaryRealFunctionDictionary = new()
+		private static readonly Dictionary<char, Func<BigDecimal, BigDecimal>> TokenUnaryRealFunctionDictionary = new Dictionary<char, Func<BigDecimal, BigDecimal>>()
 		{
 			{ '⎷', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.SquareRoot(i, BigDecimal.Precision)) }, // sqrt
 			{ '|', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Abs(i)) },  // abs	
 			{ '±', new Func<BigDecimal, BigDecimal>((BigDecimal i) => i.Sign) },     // sign
 			{ '!', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimalAdapter.Factorial(i)) },   // factorial
-			{ 'ⅇ', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Exp(i, BigDecimal.Precision)) },    // ln
+			{ 'Ə', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Ln(i, BigDecimal.Precision)) },    // ln
+			{ 'ⅇ', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Exp(i, BigDecimal.Precision)) },    // Exp
 			{ '[', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Round(i)) },    // round
 			{ '⎿', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Truncate(i)) }, // truncate
 			{ '⎾', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Ceiling(i)) }, // ceiling
@@ -53,8 +54,7 @@ namespace NiceCalc.Execution.Implementation
 			{ 'τ', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Tan(i, BigDecimal.Precision)) },    // tan
 		};
 
-
-		private static readonly Dictionary<char, Func<BigInteger, BigInteger, BigDecimal>> TokenBinaryRealFunctionDictionary = new()
+		private static readonly Dictionary<char, Func<BigInteger, BigInteger, BigDecimal>> TokenBinaryRealFunctionDictionary = new Dictionary<char, Func<BigInteger, BigInteger, BigDecimal>>()
 		{
 			{ '⌥', new Func<BigInteger, BigInteger, BigDecimal>((BigInteger a, BigInteger b) => BigDecimal.Exp(a) / BigDecimal.Exp(b)) }, // logn
 			{ '⍻', new Func<BigInteger, BigInteger, BigDecimal>((BigInteger a, BigInteger b) => BigDecimal.NthRoot(new BigDecimal(mantissa: b, exponent: 0), (int)a, decimalPlaces: BigDecimal.Precision)) } // nthroot

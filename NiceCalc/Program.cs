@@ -15,7 +15,7 @@ namespace NiceCalc
 		{
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
-			Application.SetHighDpiMode(HighDpiMode.SystemAware);
+			//Application.SetHighDpiMode(HighDpiMode.SystemAware);
 			AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 			Application.Run(new MainForm());
 		}
