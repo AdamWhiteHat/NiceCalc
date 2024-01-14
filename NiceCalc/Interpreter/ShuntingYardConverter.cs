@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.Security.Permissions;
 using NiceCalc.Interpreter.Language;
 using System.Runtime.Remoting.Metadata.W3cXsd2001;
+using NiceCalc.Tokenization;
+using Newtonsoft.Json.Linq;
 
 namespace NiceCalc.Interpreter
 {
@@ -18,17 +20,9 @@ namespace NiceCalc.Interpreter
 	{
 		private static readonly string[] AllowedTokens = (Syntax.Numbers + Syntax.Operators + Syntax.Functions + "(,)/").ToCharArray().Select(c => c.ToString()).ToArray();
 
-		private static void AddToOutput(Queue<string> output, char value)
+		private static void AddToOutput(Queue<Token> output, Token value)
 		{
-			AddToOutput(output, value.ToString());
-		}
-
-		private static void AddToOutput(Queue<string> output, string value)
-		{
-			if (value != null && value.Length > 0)
-			{
-				output.Enqueue(value);
-			}
+			output.Enqueue(value);
 		}
 
 		/// <summary>
@@ -70,152 +64,130 @@ namespace NiceCalc.Interpreter
 			return result;
 		}
 
-		public static Queue<string> Convert(List<string> tokens)
+		public static Queue<Token> Convert(List<Token> tokens)
 		{
 			if (!tokens.Any())
 			{
-				return new Queue<string>(); // No-op
+				return new Queue<Token>(); // No-op
 			}
 
-			var unknownTokens = tokens.Where(str => !str.All(c => Syntax.Numbers.Contains(c)) && !AllowedTokens.Contains(str));
-			if (unknownTokens.Any())
-			{
-				throw new ParsingException($"Expression contains unknown tokens: {{ {string.Join(", ", unknownTokens)} }}.");
-			}
-
-			string expr = string.Join("", tokens);
-
-			var dumbTokens = DumbTokenizer(expr);
 
 
+			Queue<Token> output = new Queue<Token>();
+			Stack<Token> operatorStack = new Stack<Token>();
+			Queue<Token> inputQueue = new Queue<Token>(tokens);
 
-			Queue<string> output = new Queue<string>();
-			Stack<char> operatorStack = new Stack<char>();
-			Queue<string> inputQueue = new Queue<string>(tokens);
-
-			string current = null;
+			Token current = null;
 			while (inputQueue.Any())
 			{
 				current = inputQueue.Dequeue();
 
-				//if (Syntax.IsNumeric(current))
-				if(current.All(c => Syntax.Numbers.Contains(c)))
+				if (current.TokenType == TokenType.Number)
 				{
-					AddToOutput(output, current);
+					output.Enqueue(current);
 				}
-				else if (current.Length == 1)
+				else if (current.TokenType == TokenType.Function)
 				{
-					char c = current[0];
+					operatorStack.Push(current);
+				}
+				else if (current.TokenType == TokenType.Operation)
+				{
+					if (operatorStack.Count > 0)
+					{
+						Token op = operatorStack.Peek();
 
-					if (Syntax.Numbers.Contains(c))
-					{
-						AddToOutput(output, c);
-					}
-					else if (Syntax.Functions.Contains(c))
-					{
-						operatorStack.Push(c);
-					}
-					else if (Syntax.Operators.Contains(c))
-					{
-						if (operatorStack.Count > 0)
-						{
-							char o = operatorStack.Peek();
-
-							while (
-								o != '('
-								&&
-								(
-									(Syntax.AssociativityDictionary[c] == Associativity.Left &&
-									Syntax.GetPrecedence(c) <= Syntax.GetPrecedence(o))
-										||
-									(Syntax.AssociativityDictionary[c] == Associativity.Right &&
-									Syntax.GetPrecedence(c) < Syntax.GetPrecedence(o))
-								)
+						while (
+							op.TokenType != TokenType.OpenParentheses
+							&&
+							(
+								(Syntax.AssociativityDictionary[current.Symbol] == Associativity.Left &&
+								Syntax.GetPrecedence(current.Symbol) <= Syntax.GetPrecedence(op.Symbol))
+									||
+								(Syntax.AssociativityDictionary[current.Symbol] == Associativity.Right &&
+								Syntax.GetPrecedence(current.Symbol) < Syntax.GetPrecedence(op.Symbol))
 							)
-							{
-								AddToOutput(output, operatorStack.Pop());
-								if (operatorStack.Count <= 0)
-								{
-									break;
-								}
-								o = operatorStack.Peek();
-							}
-
-						}
-						operatorStack.Push(c);
-					}
-					else if (c == ',')
-					{
-						if (operatorStack.Count > 0)
+						)
 						{
-							char o = operatorStack.Peek();
-
-							while (o != '(')
+							output.Enqueue(operatorStack.Pop());
+							if (operatorStack.Count <= 0)
 							{
-								AddToOutput(output, operatorStack.Pop());
-								if (operatorStack.Count <= 0)
-								{
-									break;
-								}
-								o = operatorStack.Peek();
-							}
-						}
-					}
-					else if (c == '(')
-					{
-						operatorStack.Push(c);
-					}
-					else if (c == ')')
-					{
-						bool leftParenthesisFound = false;
-						while (operatorStack.Count > 0)
-						{
-							char op = operatorStack.Pop();
-							if (op == '(')
-							{
-								leftParenthesisFound = true;
 								break;
 							}
-							else
-							{
-								AddToOutput(output, op);
-							}
+							op = operatorStack.Peek();
 						}
 
-						if (!leftParenthesisFound)
+					}
+					operatorStack.Push(current);
+				}
+				else if (current.TokenType == TokenType.ArgumentDelimiter)
+				{
+					if (operatorStack.Count > 0)
+					{
+						Token op = operatorStack.Peek();
+
+						while (op.TokenType != TokenType.OpenParentheses)
 						{
-							throw new ParsingException("The expression contains mismatched parentheses: Missing a left parenthesis.", c, operatorStack);
+							output.Enqueue(operatorStack.Pop());
+							if (operatorStack.Count <= 0)
+							{
+								break;
+							}
+							op = operatorStack.Peek();
 						}
 					}
-					else
+				}
+				else if (current.TokenType == TokenType.OpenParentheses)
+				{
+					operatorStack.Push(current);
+				}
+				else if (current.TokenType == TokenType.CloseParentheses)
+				{
+					bool leftParenthesisFound = false;
+					while (operatorStack.Count > 0)
 					{
-						throw new ParsingException($"Unrecognized character: '{c}'.", token: c, stack: operatorStack);
+						Token op = operatorStack.Pop();
+						if (op.TokenType == TokenType.OpenParentheses)
+						{
+							leftParenthesisFound = true;
+							break;
+						}
+						else
+						{
+							output.Enqueue(op);
+						}
+					}
+
+					if (!leftParenthesisFound)
+					{
+						throw new ParsingException("The expression contains mismatched parentheses: Missing a left parenthesis.", token: current, stack: operatorStack);
 					}
 				}
 				else
 				{
-					throw new ParsingException($"At this stage in the parsing, all tokens that are not a number value are expected to be a single character long, but a {current.Length} length token was encountered that failed to parse into a number: '{current}' (maybe because it contains a non-numeric value?)", token: current, stack: operatorStack);
+					throw new ParsingException($"Unrecognized character: '{current.ToString()}'.", token: current, stack: operatorStack);
 				}
-			} // while
 
+
+
+			} // while
 
 			//
 			// Pop off last items.
 			//
 			while (operatorStack.Count > 0)
 			{
-				char o = operatorStack.Pop();
-				if (o == '(')
+				Token op = operatorStack.Pop();
+				if (op.TokenType == TokenType.OpenParentheses)
 				{
-					throw new ParsingException("The expression contains an extraneous left parenthesis.", token: o, stack: operatorStack);
+					throw new ParsingException("The expression contains an extraneous left parenthesis.", token: op, stack: operatorStack);
 				}
-				else if (o == ')')
+				else if (op.TokenType == TokenType.CloseParentheses)
 				{
-					throw new ParsingException("The expression contains an extraneous right parenthesis.", token: o, stack: operatorStack);
+					throw new ParsingException("The expression contains an extraneous right parenthesis.", token: op, stack: operatorStack);
 				}
 				else
 				{
-					AddToOutput(output, o);
+					output.Enqueue(op);
 				}
 			}
 

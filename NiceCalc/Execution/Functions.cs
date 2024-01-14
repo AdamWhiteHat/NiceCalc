@@ -13,11 +13,16 @@ namespace NiceCalc.Execution
 	{
 		public static int GetParameterCount(char functionToken)
 		{
-			if (!TokenParameterCountDictionary.ContainsKey(functionToken))
+			if (!IsKnownFunctionToken(functionToken))
 			{
 				throw new ParsingException($"Unrecognized function token '{functionToken}' in dictionary {nameof(TokenParameterCountDictionary)}.", functionToken);
 			}
 			return TokenParameterCountDictionary[functionToken];
+		}
+
+		public static bool IsKnownFunctionToken(char functionToken)
+		{
+			return TokenParameterCountDictionary.ContainsKey(functionToken);
 		}
 
 		public static bool IsStringFunction(char functionToken)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,12 +23,19 @@ namespace NiceCalc.Interpreter.Language
 		public static readonly string Numbers = "0123456789.";
 		public static readonly string Operators = "+-*/%^";
 		public static readonly string Functions = "⎷|Əⅇ[⎿⎾±σγτ!ℙꓑꟼＦＤ⍻⌥⋂⋃∑∏πe";
-		public static readonly char AssignmentOperator = '=';
-		public static readonly char Sum = '∑';
-		public static readonly char Product = '∏';
-		public static readonly char Pi = 'π';
+		public static readonly string ControlTokens = "(,)";
+
 		public static readonly char E = 'e';
-		public static readonly char UnaryNegation = '-';
+		public static readonly char Pi = 'π';
+		public static readonly char Product = '∏';
+		public static readonly char Sum = '∑';
+		public static readonly char AssignmentOperator = '=';
+		public static readonly char NegativeSign = _numberFormatInfo.NegativeSign[0];
+		public static readonly char NumberDecimalSeparator = _numberFormatInfo.NumberDecimalSeparator[0];
+
+
+		public static NumberFormatInfo NumberFormattingInfo { get { return _numberFormatInfo; } }
+		private static NumberFormatInfo _numberFormatInfo;
 
 		public static readonly List<string> ReservedIdentifiers;
 
@@ -64,17 +72,23 @@ namespace NiceCalc.Interpreter.Language
 			}
 			else
 			{
-				throw new ParsingException($"Precedence dictionary does not contain an entry for token: '{c}'", token: c);
+				throw new ParsingException($"Precedence dictionary does not contain an entry for token: '{c}'", charToken: c);
 			}
 		}
 
 		static Syntax()
 		{
+			_numberFormatInfo = NumberFormatInfo.CurrentInfo;
 			List<string> reserved = new List<string>();
 			reserved.AddRange(NiceCalc.Execution.Functions.FunctionTokenDictionary.Keys);
 			reserved.AddRange(Functions.ToCharArray().Select(c => c.ToString()));
-			reserved.AddRange(PrecedenceDictionary.Keys.Select(c => c.ToString()));
+			reserved.AddRange((Operators+"()").Select(c => c.ToString()));
 			ReservedIdentifiers = reserved;
+		}
+
+		public static void SetNumberFormatInfo(NumberFormatInfo numberFormatInfo)
+		{
+			_numberFormatInfo = numberFormatInfo;
 		}
 
 		/// <summary>

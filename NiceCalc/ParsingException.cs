@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
+using NiceCalc.Tokenization;
 
 namespace NiceCalc
 {
@@ -29,13 +30,13 @@ namespace NiceCalc
 		}
 
 
-		public ParsingException(string message, char token,
+		public ParsingException(string message, char charToken,
 								[CallerMemberName] string sourceMemberName = "",
 								[CallerFilePath] string sourceFilePath = "",
 								[CallerLineNumber] int sourceLineNumber = 0)
-			: this(message, token.ToString(), sourceMemberName, sourceFilePath, sourceLineNumber)
+			: this(message, charToken.ToString(), sourceMemberName, sourceFilePath, sourceLineNumber)
 		{ }
-		public ParsingException(string message, string token,
+		public ParsingException(string message, string stringToken,
 								[CallerMemberName] string sourceMemberName = "",
 								[CallerFilePath] string sourceFilePath = "",
 								[CallerLineNumber] int sourceLineNumber = 0)
@@ -44,44 +45,52 @@ namespace NiceCalc
 			MethodName = sourceMemberName;
 			SourceFile = sourceFilePath;
 			LineNumber = sourceLineNumber;
-			Token = token;
+			Token = stringToken;
 			Stack = null;
 		}
 
 
-		public ParsingException(string message, char token, Stack<char> stack,
+		public ParsingException(string message, char charToken, Stack<char> charStack,
 						[CallerMemberName] string sourceMemberName = "",
 						[CallerFilePath] string sourceFilePath = "",
 						[CallerLineNumber] int sourceLineNumber = 0)
-			: this(message, token.ToString(), stack, sourceMemberName, sourceFilePath, sourceLineNumber)
+			: this(message, charToken.ToString(), charStack, sourceMemberName, sourceFilePath, sourceLineNumber)
 		{ }
-		public ParsingException(string message, string token, Stack<char> stack,
+		public ParsingException(string message, string stringToken, Stack<char> charStack,
 						[CallerMemberName] string sourceMemberName = "",
 						[CallerFilePath] string sourceFilePath = "",
 						[CallerLineNumber] int sourceLineNumber = 0)
-			: this(message, token, stack.Select(c => c.ToString()).ToList(), sourceMemberName, sourceFilePath, sourceLineNumber)
+			: this(message, stringToken, charStack.Select(c => c.ToString()).ToList(), sourceMemberName, sourceFilePath, sourceLineNumber)
 		{ }
 
 
-		public ParsingException(string message, char token, Stack<string> stack,
+		public ParsingException(string message, char charToken, Stack<string> charStack,
 								[CallerMemberName] string sourceMemberName = "",
 								[CallerFilePath] string sourceFilePath = "",
 								[CallerLineNumber] int sourceLineNumber = 0)
-			: this(message, token.ToString(), stack, sourceMemberName, sourceFilePath, sourceLineNumber)
+			: this(message, charToken.ToString(), charStack, sourceMemberName, sourceFilePath, sourceLineNumber)
 		{ }
-		public ParsingException(string message, string token, Stack<string> stack,
+		public ParsingException(string message, string stringToken, Stack<string> stringStack,
 							[CallerMemberName] string sourceMemberName = "",
 							[CallerFilePath] string sourceFilePath = "",
 							[CallerLineNumber] int sourceLineNumber = 0)
-			: this(message, token, stack.ToList(), sourceMemberName, sourceFilePath, sourceLineNumber)
+			: this(message, stringToken, stringStack.ToList(), sourceMemberName, sourceFilePath, sourceLineNumber)
 		{ }
+
+		public ParsingException(string message, Token token, Stack<Token> stack,
+							[CallerMemberName] string sourceMemberName = "",
+							[CallerFilePath] string sourceFilePath = "",
+							[CallerLineNumber] int sourceLineNumber = 0)
+			: this(message, token.ToString(), stack.Select(tok => tok.ToString()).ToList(), sourceMemberName, sourceFilePath, sourceLineNumber)
+		{
+		}
 
 
 		public ParsingException(string message, string token, List<string> stack,
-							[CallerMemberName] string sourceMemberName = "",
-							[CallerFilePath] string sourceFilePath = "",
-							[CallerLineNumber] int sourceLineNumber = 0)
-			: base(message)
+						[CallerMemberName] string sourceMemberName = "",
+						[CallerFilePath] string sourceFilePath = "",
+						[CallerLineNumber] int sourceLineNumber = 0)
+		: base(message)
 		{
 			MethodName = sourceMemberName;
 			SourceFile = sourceFilePath;

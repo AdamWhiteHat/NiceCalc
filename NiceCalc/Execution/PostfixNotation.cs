@@ -15,6 +15,7 @@ using ExtendedNumerics.Helpers;
 using NiceCalc.Interpreter.Language;
 using System.Data.Common;
 using System.Windows.Forms;
+using NiceCalc.Tokenization;
 
 namespace NiceCalc.Execution
 {
@@ -22,25 +23,14 @@ namespace NiceCalc.Execution
 	{
 		private static readonly string AllowedCharacters = Syntax.Numbers + Syntax.Operators + Syntax.Functions + " /";
 
-		public static string Evaluate(Queue<string> postfixTokenQueue, NumericType numericType)
+		public static NumberToken Evaluate(Queue<Token> postfixTokenQueue, NumericType numericType)
 		{
 			if (postfixTokenQueue == null || postfixTokenQueue.Count < 1)
 			{
 				throw new ParsingException($"Argument {nameof(postfixTokenQueue)} must not be null or empty.");
 			}
 
-			var unknownCharacters = postfixTokenQueue.SelectMany(str => str.Where(c => !AllowedCharacters.Contains(c)));
-			if (unknownCharacters.Any())
-			{
-				throw new ParsingException($"Argument {nameof(postfixTokenQueue)} contains some unknown tokens: {{ {string.Join(", ", unknownCharacters)} }}.");
-			}
-
-			Queue<string> inputQueue = new Queue<string>(
-			postfixTokenQueue
-					.Select(str => new string(str.Where(c => AllowedCharacters.Contains(c)).ToArray()))
-			);
-
-			Evaluation evaluation = new Evaluation(inputQueue, numericType);
+			Evaluation evaluation = new Evaluation(postfixTokenQueue, numericType);
 
 			return evaluation.Eval();
 		}
@@ -51,111 +41,99 @@ namespace NiceCalc.Execution
 		private class Evaluation
 		{
 			private NumericType NumericType;
-			private Stack<string> Stack;
-			private Queue<string> InputQueue;
+			private Stack<Token> Stack;
+			private Queue<Token> InputQueue;
 
-			public Evaluation(Queue<string> inputQueue, NumericType numericType)
+			public Evaluation(Queue<Token> inputQueue, NumericType numericType)
 			{
 				InputQueue = inputQueue;
 				NumericType = numericType;
-				Stack = new Stack<string>();
+				Stack = new Stack<Token>();
 			}
 
-			public string Eval()
+			public NumberToken Eval()
 			{
-				string token = null;
+				Token token;
 
 				while (InputQueue.Any())
 				{
 					token = InputQueue.Dequeue();
 
-					if (token.Length > 0)
+					//char tokenChar = token[0];
+
+					if (token.TokenType == TokenType.Number)
 					{
-						if (token.Length > 1)
+						Stack.Push(token);
+					}
+					else if (token.TokenType == TokenType.Function)
+					{
+						FunctionToken fToken = token as FunctionToken;
+
+						int paramCount = fToken.ParameterCount;
+
+						bool proceedToOperation = false;
+						if (paramCount == -1)
 						{
-							if (Syntax.IsNumeric(token))
+							paramCount = 2;
+
+							if (fToken.Symbol == Syntax.Sum)
 							{
-								Stack.Push(token);
+								token = new OperatorToken('+');
+								proceedToOperation = true;
 							}
-							else
+							else if (token.Symbol == Syntax.Product)
 							{
-								throw new ParsingException("Operators and operands must be separated by a space.", token: token);
+								token = new OperatorToken('*');
+								proceedToOperation = true;
 							}
+
+							if (InputQueue.Count < (Stack.Count - 1))
+							{
+								int quantity = Stack.Count - 2;
+
+								Queue<Token> newQueue
+									= new Queue<Token>(
+									   Enumerable.Repeat(token, quantity)
+									   .Concat(InputQueue)
+									);
+
+								InputQueue = newQueue;
+							}
+						}
+
+						if (proceedToOperation)
+						{
+							ProcessOperation(token);
 						}
 						else
 						{
-							char tokenChar = token[0];
-
-							if (Syntax.Numbers.Contains(tokenChar))
-							{
-								Stack.Push(tokenChar.ToString());
-							}
-							else if (Syntax.Functions.Contains(tokenChar))
-							{
-								int paramCount = Functions.GetParameterCount(tokenChar);
-
-								bool proceedToOperation = false;
-								if (paramCount == -1)
-								{
-									paramCount = 2;
-
-									if (tokenChar == Syntax.Sum)
-									{
-										tokenChar = '+';
-										proceedToOperation = true;
-									}
-									else if (tokenChar == Syntax.Product)
-									{
-										tokenChar = '*';
-										proceedToOperation = true;
-									}
-
-									if (InputQueue.Count < (Stack.Count - 1))
-									{
-										int quantity = Stack.Count - 2;
-
-										Queue<string> newQueue
-											= new Queue<string>(
-											   Enumerable.Repeat(tokenChar.ToString(), quantity)
-											   .Concat(InputQueue)
-											);
-
-										InputQueue = newQueue;
-									}
-								}
-
-								if (proceedToOperation)
-								{
-									ProcessOperation(tokenChar);
-								}
-								else
-								{
-									ProcessFunction(paramCount, tokenChar);
-								}
-							}
-							else if (Syntax.Operators.Contains(tokenChar))
-							{
-								ProcessOperation(tokenChar);
-							}
-							else
-							{
-								throw new ParsingException($"Unrecognized character '{tokenChar}'.", token: tokenChar, stack: Stack);
-							}
+							ProcessFunction(paramCount, token);
 						}
+					}
+					else if (token.TokenType == TokenType.Operation)
+					{
+						ProcessOperation(token);
 					}
 					else
 					{
-						throw new ParsingException("Token length is less than one.");
+						throw new ParsingException($"Unrecognized character '{token.ToString()}'.", token: token, stack: Stack);
 					}
+
 				}
 
 				if (Stack.Count == 1)
 				{
-					return Stack.Pop();
+					Token lastToken = Stack.Pop();
+					NumberToken result = lastToken as NumberToken;
+					if (result == null)
+					{
+						throw new ParsingException($"The last token on the stack was not of type {nameof(NumberToken)}.", token: lastToken, stack: Stack);
+					}
+					return result;
 				}
 				else
 				{
-					throw new ParsingException("The input has too many values for the number of operators.", token: "(none)", stack: Stack);
+					throw new ParsingException("The input has too many values for the number of operators.", token: null, stack: Stack);
 				}
 
 			} // method
@@ -164,61 +142,59 @@ namespace NiceCalc.Execution
 
 
 
-			private void ProcessFunction(int paramCount, char tokenChar)
+			private void ProcessFunction(int paramCount, Token tokenChar)
 			{
 				if (Stack.Count < paramCount)
 				{
 					throw new ParsingException($"Insufficient number of parameters on the stack for the function token '{tokenChar}'; Was expecting {paramCount}, but only {Stack.Count} items on the stack.", token: tokenChar, stack: Stack);
 				}
 
-				bool isStringFunction = Functions.IsStringFunction(tokenChar);
-				bool isIntegerFunction = Functions.IsIntegerFunction(tokenChar);
+				bool isStringFunction = Functions.IsStringFunction(tokenChar.Symbol);
+				bool isIntegerFunction = Functions.IsIntegerFunction(tokenChar.Symbol);
 
 
 				if (paramCount == 0)
 				{
-					if (tokenChar == Syntax.Pi)
+					if (tokenChar.Symbol == Syntax.Pi)
 					{
-						Stack.Push(new string(BigDecimal.Pi.ToString().Take(BigDecimal.Precision).ToArray()));
+						Stack.Push(tokenChar);
 						return;
 					}
-					else if (tokenChar == Syntax.E)
+					else if (tokenChar.Symbol == Syntax.E)
 					{
-						Stack.Push(new string(BigDecimal.E.ToString().Take(BigDecimal.Precision).ToArray()));
+						Stack.Push(tokenChar);
 						return;
 					}
 				}
 				else if (paramCount == 1)
 				{
-					string param1String = Stack.Pop();
+					NumberToken param1 = Stack.Pop() as NumberToken;
 
 					if (isIntegerFunction)
 					{
-						BigInteger param1 = BigInteger.Parse(param1String);
-						Func<BigInteger, BigInteger> unaryIntFunc = Functions.GetUnaryIntegerFunction(tokenChar);
+						Func<BigInteger, BigInteger> unaryIntFunc = Functions.GetUnaryIntegerFunction(tokenChar.Symbol);
 
-						BigInteger result = unaryIntFunc(param1);
-						Stack.Push(result.ToString());
+						BigInteger result = unaryIntFunc(param1.IntegerValue);
+						Stack.Push(new NumberToken(result));
 					}
 					else if (isStringFunction)
 					{
-						BigInteger param1 = BigInteger.Parse(param1String);
-						Func<BigInteger, string> stringFunction = Functions.GetUnaryStringFunction(tokenChar);
+						Func<BigInteger, string> stringFunction = Functions.GetUnaryStringFunction(tokenChar.Symbol);
 
-						string results = stringFunction(param1);
-						Stack.Push(results);
+						string results = stringFunction(param1.IntegerValue);
+						Stack.Push(new LiteralToken(results));
 					}
 					else
 					{
-						string resultString = string.Empty;
+						Token resultString;
 
 						if (NumericType == NumericType.Real)
 						{
-							resultString = Function_UnaryReal(tokenChar, param1String);
+							resultString = Function_UnaryReal(tokenChar, param1);
 						}
 						else
 						{
-							resultString = Function_UnaryFraction(tokenChar, param1String);
+							resultString = Function_UnaryFraction(tokenChar, param1);
 						}
 
 						Stack.Push(resultString);
@@ -226,22 +202,19 @@ namespace NiceCalc.Execution
 				}
 				else if (paramCount == 2)
 				{
-					string param1String = Stack.Pop();
-					string param2String = Stack.Pop();
-					BigInteger param1 = BigInteger.Parse(param1String);
-					BigInteger param2 = BigInteger.Parse(param1String);
+					NumberToken param1 = Stack.Pop() as NumberToken;
+					NumberToken param2 = Stack.Pop() as NumberToken;
 
 					if (isIntegerFunction)
 					{
-						Func<BigInteger, BigInteger, BigInteger> binaryIntFunc = Functions.GetBinaryIntegerFunction(tokenChar);
+						Func<BigInteger, BigInteger, BigInteger> binaryIntFunc = Functions.GetBinaryIntegerFunction(tokenChar.Symbol);
 
-						BigInteger result = binaryIntFunc(param1, param2);
-						Stack.Push(result.ToString());
+						BigInteger result = binaryIntFunc(param1.IntegerValue, param2.IntegerValue);
+						Stack.Push(new NumberToken(result));
 					}
 					else
 					{
-						string resultString = string.Empty;
-
+						Token resultString;
 						if (NumericType == NumericType.Real)
 						{
 							resultString = Function_BinaryReal(tokenChar, param1, param2);
@@ -262,7 +235,7 @@ namespace NiceCalc.Execution
 
 
 
-			private void ProcessOperation(char tokenChar)
+			private void ProcessOperation(Token tokenChar)
 			{
 				if (Stack.Count < 2)
 				{
@@ -276,10 +249,10 @@ namespace NiceCalc.Execution
 					throw new ParsingException("The algebraic string has not sufficient values in the expression for the number of operators.", token: tokenChar, stack: Stack);
 				}
 
-				string right = Stack.Pop();
-				string left = Stack.Pop();
+				NumberToken right = Stack.Pop() as NumberToken;
+				NumberToken left = Stack.Pop() as NumberToken;
 
-				string resultString = string.Empty;
+				Token resultString;
 
 				if (NumericType == NumericType.Real)
 				{
@@ -309,82 +282,83 @@ namespace NiceCalc.Execution
 
 			#region Real
 
-			private static string Function_UnaryReal(char token, string parameter)
+			private static NumberToken Function_UnaryReal(Token token, NumberToken parameter)
 			{
-				BigDecimal param1 = ConvertToRealIfNeeded(parameter);
+				BigDecimal param1 = parameter.IntegerValue;
 
-				Func<BigDecimal, BigDecimal> unaryRealFunc = NiceCalc.Execution.Implementation.Decimal.GetUnaryRealFunction(token);
+				Func<BigDecimal, BigDecimal> unaryRealFunc = NiceCalc.Execution.Implementation.Decimal.GetUnaryRealFunction(token.Symbol);
 
 				BigDecimal result = unaryRealFunc(param1);
 
-				return result.ToString();
+				return new NumberToken(result);
 			}
 
-			private static string Function_BinaryReal(char token, BigInteger left, BigInteger right)
+			private static NumberToken Function_BinaryReal(Token token, NumberToken left, NumberToken right)
 			{
-				Func<BigInteger, BigInteger, BigDecimal> binaryRealFunc = NiceCalc.Execution.Implementation.Decimal.GetBinaryRealFunction(token);
-				BigDecimal result = binaryRealFunc(left, right);
-				return result.ToString();
+				Func<BigInteger, BigInteger, BigDecimal> binaryRealFunc = NiceCalc.Execution.Implementation.Decimal.GetBinaryRealFunction(token.Symbol);
+				BigDecimal result = binaryRealFunc(left.IntegerValue, right.IntegerValue);
+				return new NumberToken(result);
 			}
 
-			private static string Operation_BinaryReal(char token, string left, string right)
+			private static NumberToken Operation_BinaryReal(Token token, NumberToken left, NumberToken right)
 			{
-				BigDecimal rhs = ConvertToRealIfNeeded(right);
-				BigDecimal lhs = ConvertToRealIfNeeded(left);
+				BigDecimal rhs = right.RealValue;
+				BigDecimal lhs = left.RealValue;
 
-				Func<BigDecimal, BigDecimal, BigDecimal> operation = NiceCalc.Execution.Implementation.Decimal.GetBinaryOperation(token);
+				Func<BigDecimal, BigDecimal, BigDecimal> operation = NiceCalc.Execution.Implementation.Decimal.GetBinaryOperation(token.Symbol);
 
 				BigDecimal result = operation(lhs, rhs);
 
-				return result.ToString();
+				return new NumberToken(result);
 			}
 
 			#endregion
 
 			#region Rational
 
-			private static string Function_UnaryFraction(char token, string parameter)
+			private static NumberToken Function_UnaryFraction(Token token, NumberToken parameter)
 			{
-				if (!NiceCalc.Execution.Implementation.Rational.IsFunctionTokenSupported(token))
+				if (!NiceCalc.Execution.Implementation.Rational.IsFunctionTokenSupported(token.Symbol))
 				{
 					return Function_UnaryReal(token, parameter);
 				}
 
-				Fraction param1 = ConvertToRationalIfNeeded(parameter);
+				Fraction param1 = parameter.RationalValue;
 
-				Func<Fraction, Fraction> unaryRealFunc = NiceCalc.Execution.Implementation.Rational.GetUnaryRealFunction(token);
+				Func<Fraction, Fraction> unaryRealFunc = NiceCalc.Execution.Implementation.Rational.GetUnaryRealFunction(token.Symbol);
 
 				Fraction result = unaryRealFunc(param1);
 
-				return result.ToString();
+				return new NumberToken(result);
 			}
 
-			private static string Function_BinaryFraction(char token, BigInteger left, BigInteger right)
+			private static NumberToken Function_BinaryFraction(Token token, NumberToken left, NumberToken right)
 			{
-				if (!NiceCalc.Execution.Implementation.Rational.IsFunctionTokenSupported(token))
+				if (!NiceCalc.Execution.Implementation.Rational.IsFunctionTokenSupported(token.Symbol))
 				{
 					return Function_BinaryReal(token, left, right);
 				}
 
-				Func<BigInteger, BigInteger, Fraction> binaryRealFunc = NiceCalc.Execution.Implementation.Rational.GetBinaryRealFunction(token);
-				Fraction result = binaryRealFunc(left, right);
-				return result.ToString();
+				Func<BigInteger, BigInteger, Fraction> binaryRealFunc = NiceCalc.Execution.Implementation.Rational.GetBinaryRealFunction(token.Symbol);
+				Fraction result = binaryRealFunc(left.IntegerValue, right.IntegerValue);
+				return new NumberToken(result);
 			}
 
-			private static string Operation_BinaryFraction(char token, string left, string right)
+			private static NumberToken Operation_BinaryFraction(Token token, NumberToken left, NumberToken right)
 			{
-				Fraction rhs = ConvertToRationalIfNeeded(right);
-				Fraction lhs = ConvertToRationalIfNeeded(left);
+				Fraction rhs = right.RationalValue;
+				Fraction lhs = left.RationalValue;
 
-				Func<Fraction, Fraction, Fraction> operation = NiceCalc.Execution.Implementation.Rational.GetBinaryOperation(token);
+				Func<Fraction, Fraction, Fraction> operation = NiceCalc.Execution.Implementation.Rational.GetBinaryOperation(token.Symbol);
 
 				Fraction result = operation(lhs, rhs);
 
-				return result.ToString();
+				return new NumberToken(result);
 			}
 
 			#endregion
 
+			/*
 			#region Conversion
 
 			private static BigDecimal ConvertToRealIfNeeded(string stringValue)
@@ -452,7 +426,7 @@ namespace NiceCalc.Execution
 			}
 
 			#endregion
-
+			*/
 		}
 
 	} // class

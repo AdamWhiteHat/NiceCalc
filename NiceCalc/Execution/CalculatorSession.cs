@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
-using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Text;
@@ -23,7 +22,7 @@ namespace NiceCalc.Execution
 		[Bindable(true)]
 		[TypeConverter("System.Windows.Forms.Design.DataSourceConverter,System.Design")]
 		[Category("Data")]
-		public ObservableDictionary<string, string> Variables { get; set; }
+		public ObservableDictionary<string, NumberToken> Variables { get; set; }
 
 		public NumericType PreferredOutputFormat { get; set; }
 
@@ -50,11 +49,11 @@ namespace NiceCalc.Execution
 		public void Reset()
 		{
 			LineNumber = 0;
-			Variables = new ObservableDictionary<string, string>();
+			Variables = new ObservableDictionary<string, NumberToken>(StringComparer.OrdinalIgnoreCase);
 			BoundList = null;
 		}
 
-		public string Eval(string expression)
+		public NumberToken Eval(string expression)
 		{
 			LineNumber++;
 
@@ -68,20 +67,20 @@ namespace NiceCalc.Execution
 
 				string[] parts = expression.Split(new char[] { Syntax.AssignmentOperator });
 
-				string variableIdentifier = parts[0].Trim();
-				string variableExpression = parts[1].Trim();
+				string identifier = parts[0].Trim();
+				string assignmentExpression = parts[1].Trim();
 
-				if (char.IsDigit(variableIdentifier[0]) || variableIdentifier.Any(c => !(char.IsLetterOrDigit(c) || c == '_')))
+				if (char.IsDigit(identifier[0]) || identifier.Any(c => !(char.IsLetterOrDigit(c) || c == '_')))
 				{
-					throw new CalculatorException($"Variable identifiers may contain only letters, numbers and underscore characters and cannot begin with a number. Illegal identifier: '{variableIdentifier}'");
+					throw new CalculatorException($"Variable identifiers may contain only letters, numbers and underscore characters and cannot begin with a number. Illegal identifier: '{identifier}'");
 				}
 
-				if (Syntax.ReservedIdentifiers.Contains(variableIdentifier))
+				if (Syntax.ReservedIdentifiers.Contains(identifier))
 				{
-					throw new CalculatorException($"'{variableIdentifier}' is a reserved identifier. Please choose something else.");
+					throw new CalculatorException($"'{identifier}' is a reserved identifier. Please choose something else.");
 				}
 
-				return EvaluateAndAssign(variableExpression, variableIdentifier);
+				return EvaluateAndAssign(identifier, assignmentExpression);
 			}
 
 			return Evaluate(expression);
@@ -92,30 +91,28 @@ namespace NiceCalc.Execution
 			BoundList = bindingList;
 		}
 
-		private string EvaluateAndAssign(string expression, string assignmentIdentifier)
+		private NumberToken EvaluateAndAssign(string identifier, string assignmentExpression)
 		{
-			string results = Evaluate(expression);
+			NumberToken results = Evaluate(assignmentExpression);
 
-			string formattedString = $"{assignmentIdentifier} = {results.Trim()}";
-
-			if (Variables.ContainsKey(assignmentIdentifier))
+			if (Variables.ContainsKey(identifier))
 			{
-				string value = Variables[assignmentIdentifier];
-
-				if (value.Trim() != results.Trim())
+				NumberToken value = Variables[identifier];
+				if (value != results)
 				{
-					Variables[assignmentIdentifier] = results.Trim();
+					Variables[identifier] = results;
 				}
 			}
 			else
 			{
-				Variables.Add(assignmentIdentifier, results.Trim());
+				Variables.Add(identifier, results);
 			}
 
 			if (BoundList != null)
 			{
-				var found = BoundList.Cast<string>().FirstOrDefault(itm => itm.ToString().Contains(assignmentIdentifier));
+				string formattedString = $"{identifier} = {results}";
 
+				var found = BoundList.Cast<string>().FirstOrDefault(itm => itm.Contains(identifier));
 				if (found != default(string))
 				{
 					int index = BoundList.IndexOf(found);
@@ -135,8 +132,7 @@ namespace NiceCalc.Execution
 		}
 
 
-
-		private string Evaluate(string expression)
+		private NumberToken Evaluate(string expression)
 		{
 			if (!string.IsNullOrWhiteSpace(expression))
 			{
@@ -146,102 +142,39 @@ namespace NiceCalc.Execution
 					expr = new string(expression.Skip(1).ToArray());
 				}
 
-				if (expr.All(c => Syntax.Numbers.Contains(c)))
+				if (Syntax.IsNumeric(expr))
 				{
-					return expression; // No-op. Expression is just a number (likely to be assigned to variable).
+					return new NumberToken(expression); // No-op. Expression is just a number (likely to be assigned to variable).
+				}
+
+				if (Variables.ContainsKey(expression))
+				{
+					return Variables[expression];
 				}
 			}
 
-			/*
-			//ParsingConfig.Default.ExpressionPromoter
-			//ParsingConfig.Default.TypeConverters
-			//System.Linq.Dynamic.Core.Parser.IExpressionPromoter
-			//IExpressionPromoter: Expression promoter is used to promote object or value types to their destination type when an automatic promotion is available such as: int to int?
 
-			Dictionary<Type, TypeConverter> typeConverters = new Dictionary<Type, TypeConverter>();
-			typeConverters.Add(typeof(BigDecimal), new BigDecimalTypeConverter());
-			typeConverters.Add(typeof(Fraction), new FractionTypeConverter());
+			List<Token> tokens = Tokenizer.Tokenize(expression);
 
-			ParsingConfig config = ParsingConfig.Default;
-			config.TypeConverters = typeConverters;
-		
-
-
-
-			LambdaExpression lambda = System.Linq.Dynamic.Core.DynamicExpressionParser.ParseLambda(parsingConfig: config, parameters: GetVariablesInScope(), resultType: null, expression: expression);
-			Delegate func = lambda.Compile();
-
-			object output = string.Empty;
-
-			if (Variables.Any())
+			int index = tokens.FindIndex(tok => tok.TokenType == TokenType.Variable);
+			while (index != -1)
 			{
-				if (PreferredOutputFormat == NumericType.Real)
+				VariableToken vTok = tokens[index] as VariableToken;
+				if (vTok != null)
 				{
-					output = func.DynamicInvoke(GetVariableValuesAsReals());
+					if (Variables.ContainsKey(vTok.Name))
+					{
+						NumberToken fromVariable = Variables[vTok.Name];
+						tokens[index] = fromVariable;
+					}
 				}
-				else if (PreferredOutputFormat == NumericType.Rational)
-				{
-					output = func.DynamicInvoke(GetVariableValuesAsRationals());
-				}
-			}
-			else
-			{
-				output = func.DynamicInvoke();
+
+				index = tokens.FindIndex(index, tok => tok.TokenType == TokenType.Variable);
 			}
 
-			string result = "";
 
-			if (output != null)
-			{
-				result = output.ToString();
-			}
-
-			return result;
-			*/
-
-
-			List<string> tokens = Tokenizer.Tokenize(expression);
-
-			bool skipEvaluation = false;
-			if (tokens.All(tok => Variables.ContainsKey(tok)))
-			{
-				skipEvaluation = true;
-			}
-
-			List<string> variableInlinedExpression = PopulateVariableValues(tokens, Variables);
-
-			if (skipEvaluation)
-			{
-				return string.Join("", variableInlinedExpression);
-			}
-
-			string results = InfixNotation.Evaluate(variableInlinedExpression, PreferredOutputFormat);
+			NumberToken results = InfixNotation.Evaluate(tokens, PreferredOutputFormat);
 			return results;
-		}
-
-		private BigDecimal[] GetVariableValuesAsReals()
-		{
-			return Variables.Select(kvp => BigDecimal.Parse(kvp.Value)).ToArray();
-		}
-
-		private Fraction[] GetVariableValuesAsRationals()
-		{
-			return Variables.Select(kvp => Fraction.Parse(kvp.Value)).ToArray();
-		}
-
-		private ParameterExpression[] GetVariablesInScope()
-		{
-			//Variables
-			//PreferredOutputFormat
-
-			Type parameterType = typeof(BigDecimal);
-
-			if (PreferredOutputFormat == NumericType.Rational)
-			{
-				parameterType = typeof(Fraction);
-			}
-
-			return Variables.Select(kvp => ParameterExpression.Parameter(parameterType, kvp.Key)).ToArray();
 		}
 
 		private static List<string> PopulateVariableValues(List<string> tokens, ObservableDictionary<string, string> variableDictionary)
@@ -259,195 +192,7 @@ namespace NiceCalc.Execution
 			return tokens;
 		}
 
-		
 
-	}
-
-
-	public class BigDecimalTypeConverter : TypeConverter
-	{
-		public BigDecimalTypeConverter()
-			: base()
-		{ }
-
-		public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
-		{
-			switch (sourceType.Name)
-			{
-				case "Int16":
-				case "Int32":
-				case "Int64":
-				case "Single":
-				case "Double":
-				case "Decimal":
-				case "BigInteger":
-				case "String":
-					return true;
-				default:
-					return base.CanConvertFrom(context, sourceType);
-			}
-		}
-
-		public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
-		{
-			switch (destinationType.Name)
-			{
-				case "Int16":
-				case "Int32":
-				case "Int64":
-				case "Single":
-				case "Double":
-				case "BigInteger":
-				case "String":
-					return true;
-				default:
-					return base.CanConvertTo(context, destinationType);
-			}
-		}
-
-		public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
-		{
-			if (value is Int16 || value is Int32) { return new BigDecimal((Int32)value); }
-			else if (value is Int64) { return new BigDecimal((Int64)value); }
-			else if (value is Single) { return new BigDecimal((Single)value); }
-			else if (value is double) { return new BigDecimal((double)value); }
-			else if (value is BigInteger) { return new BigDecimal((BigInteger)value); }
-			else if (value is string) { return BigDecimal.Parse((string)value); }
-			else { return base.ConvertFrom(context, culture, value); }
-		}
-
-		public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
-		{
-			BigDecimal from = (BigDecimal)value;
-			switch (destinationType.Name)
-			{
-				case "Int16":
-					return (Int16)from;
-				case "Int32":
-					return (Int32)from;
-				case "Int64":
-					return (Int64)((Int32)from);
-				case "Single":
-					return (Single)from;
-				case "Double":
-					return (double)from;
-				case "BigInteger":
-					return (BigInteger)from;
-				case "String":
-					return from.ToString();
-				default:
-					return base.ConvertTo(context, culture, value, destinationType);
-			}
-		}
-
-		public override bool IsValid(ITypeDescriptorContext context, object value)
-		{
-			switch (value.GetType().Name)
-			{
-				case "Int16":
-				case "Int32":
-				case "Int64":
-				case "Single":
-				case "Double":
-				case "BigInteger":
-				case "String":
-					return true;
-				default:
-					return base.IsValid(context, value);
-			}
-		}
-	}
-
-
-	public class FractionTypeConverter : TypeConverter
-	{
-		public FractionTypeConverter()
-			: base()
-		{ }
-
-		public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
-		{
-			switch (sourceType.Name)
-			{
-				case "Int16":
-				case "Int32":
-				case "Int64":
-				case "Single":
-				case "Double":
-				case "Decimal":
-				case "BigInteger":
-				case "String":
-					return true;
-				default:
-					return base.CanConvertFrom(context, sourceType);
-			}
-		}
-
-		public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
-		{
-			switch (destinationType.Name)
-			{
-				case "Int32":
-				case "Single":
-				case "Double":
-				case "BigInteger":
-				case "String":
-					return true;
-				default:
-					return base.CanConvertTo(context, destinationType);
-			}
-		}
-
-		public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
-		{
-			if (value is Int16 || value is Int32) { return new Fraction((Int32)value); }
-			else if (value is Int64) { return new Fraction((Int32)value); }
-			else if (value is Single) { return new Fraction((Single)value); }
-			else if (value is double) { return new Fraction((double)value); }
-			else if (value is BigInteger) { return new Fraction((BigInteger)value); }
-			else if (value is string) { return Fraction.Parse((string)value); }
-			else { return base.ConvertFrom(context, culture, value); }
-		}
-
-		public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
-		{
-			Fraction from = (Fraction)value;
-			switch (destinationType.Name)
-			{
-				case "Int32":
-					{
-						BigInteger result = from.Numerator / from.Denominator;
-						return (int)result;
-					}
-				case "Single":
-					return (Single)from;
-				case "Double":
-					return (double)from;
-				case "BigInteger":
-					return (BigInteger)from;
-				case "String":
-					return from.ToString();
-				default:
-					return base.ConvertTo(context, culture, value, destinationType);
-			}
-		}
-
-		public override bool IsValid(ITypeDescriptorContext context, object value)
-		{
-			switch (value.GetType().Name)
-			{
-				case "Int16":
-				case "Int32":
-				case "Int64":
-				case "Single":
-				case "Double":
-				case "BigInteger":
-				case "String":
-					return true;
-				default:
-					return base.IsValid(context, value);
-			}
-		}
 	}
 
 }
