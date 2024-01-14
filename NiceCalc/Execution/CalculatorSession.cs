@@ -2,11 +2,16 @@
 using Microsoft.Build.Framework.XamlTypes;
 using NiceCalc.Interpreter;
 using NiceCalc.Interpreter.Language;
+using NiceCalc.Tokenization;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
+using System.Linq.Dynamic.Core;
+using System.Linq.Expressions;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -129,17 +134,118 @@ namespace NiceCalc.Execution
 			return results;
 		}
 
+
+
 		private string Evaluate(string expression)
 		{
-			string variableInlinedExpression = PopulateVariableValues(expression, Variables);
+			if (!string.IsNullOrWhiteSpace(expression))
+			{
+				string expr = expression;
+				if (expression[0] == '-')
+				{
+					expr = new string(expression.Skip(1).ToArray());
+				}
+
+				if (expr.All(c => Syntax.Numbers.Contains(c)))
+				{
+					return expression; // No-op. Expression is just a number (likely to be assigned to variable).
+				}
+			}
+
+			/*
+			//ParsingConfig.Default.ExpressionPromoter
+			//ParsingConfig.Default.TypeConverters
+			//System.Linq.Dynamic.Core.Parser.IExpressionPromoter
+			//IExpressionPromoter: Expression promoter is used to promote object or value types to their destination type when an automatic promotion is available such as: int to int?
+
+			Dictionary<Type, TypeConverter> typeConverters = new Dictionary<Type, TypeConverter>();
+			typeConverters.Add(typeof(BigDecimal), new BigDecimalTypeConverter());
+			typeConverters.Add(typeof(Fraction), new FractionTypeConverter());
+
+			ParsingConfig config = ParsingConfig.Default;
+			config.TypeConverters = typeConverters;
+		
+
+
+
+			LambdaExpression lambda = System.Linq.Dynamic.Core.DynamicExpressionParser.ParseLambda(parsingConfig: config, parameters: GetVariablesInScope(), resultType: null, expression: expression);
+			Delegate func = lambda.Compile();
+
+			object output = string.Empty;
+
+			if (Variables.Any())
+			{
+				if (PreferredOutputFormat == NumericType.Real)
+				{
+					output = func.DynamicInvoke(GetVariableValuesAsReals());
+				}
+				else if (PreferredOutputFormat == NumericType.Rational)
+				{
+					output = func.DynamicInvoke(GetVariableValuesAsRationals());
+				}
+			}
+			else
+			{
+				output = func.DynamicInvoke();
+			}
+
+			string result = "";
+
+			if (output != null)
+			{
+				result = output.ToString();
+			}
+
+			return result;
+			*/
+
+
+			List<string> tokens = Tokenizer.Tokenize(expression);
+
+			bool skipEvaluation = false;
+			if (tokens.All(tok => Variables.ContainsKey(tok)))
+			{
+				skipEvaluation = true;
+			}
+
+			List<string> variableInlinedExpression = PopulateVariableValues(tokens, Variables);
+
+			if (skipEvaluation)
+			{
+				return string.Join("", variableInlinedExpression);
+			}
+
 			string results = InfixNotation.Evaluate(variableInlinedExpression, PreferredOutputFormat);
 			return results;
 		}
 
-		private static string PopulateVariableValues(string expression, ObservableDictionary<string, string> variableDictionary)
+		private BigDecimal[] GetVariableValuesAsReals()
 		{
-			List<string> tokens = Tokenize(expression);
+			return Variables.Select(kvp => BigDecimal.Parse(kvp.Value)).ToArray();
+		}
 
+		private Fraction[] GetVariableValuesAsRationals()
+		{
+			return Variables.Select(kvp => Fraction.Parse(kvp.Value)).ToArray();
+		}
+
+		private ParameterExpression[] GetVariablesInScope()
+		{
+			//Variables
+			//PreferredOutputFormat
+
+			Type parameterType = typeof(BigDecimal);
+
+			if (PreferredOutputFormat == NumericType.Rational)
+			{
+				parameterType = typeof(Fraction);
+			}
+
+			return Variables.Select(kvp => ParameterExpression.Parameter(parameterType, kvp.Key)).ToArray();
+		}
+
+		private static List<string> PopulateVariableValues(List<string> tokens, ObservableDictionary<string, string> variableDictionary)
+		{
 			foreach (var kvp in variableDictionary)
 			{
 				int index = tokens.IndexOf(kvp.Key);
@@ -150,69 +256,198 @@ namespace NiceCalc.Execution
 				}
 			}
 
-			string result = string.Join("", tokens);
-			return result;
-		}
-
-		private static readonly string NonIdentifierTokens = Syntax.Operators + "() ";
-		private static List<string> Tokenize(string expression)
-		{
-			List<string> tokens = new List<string>();
-
-			List<char> number = new List<char>();
-			List<char> identifier = new List<char>();
-
-			foreach (char c in expression)
-			{
-				if (NonIdentifierTokens.Contains(c))
-				{
-					if (number.Any())
-					{
-						tokens.Add(new string(number.ToArray()));
-						number.Clear();
-					}
-					if (identifier.Any())
-					{
-						tokens.Add(new string(identifier.ToArray()));
-						identifier.Clear();
-					}
-					tokens.Add(c.ToString());
-				}
-				else if (Syntax.Numbers.Contains(c))
-				{
-					if (identifier.Any())
-					{
-						identifier.Add(c);
-					}
-					else
-					{
-						number.Add(c);
-					}
-				}
-				else
-				{
-					if (number.Any())
-					{
-						tokens.Add(new string(number.ToArray()));
-						number.Clear();
-					}
-					identifier.Add(c);
-				}
-			}
-
-			if (number.Any())
-			{
-				tokens.Add(new string(number.ToArray()));
-				number.Clear();
-			}
-			if (identifier.Any())
-			{
-				tokens.Add(new string(identifier.ToArray()));
-				identifier.Clear();
-			}
-
 			return tokens;
 		}
 
+		
+
 	}
+
+
+	public class BigDecimalTypeConverter : TypeConverter
+	{
+		public BigDecimalTypeConverter()
+			: base()
+		{ }
+
+		public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
+		{
+			switch (sourceType.Name)
+			{
+				case "Int16":
+				case "Int32":
+				case "Int64":
+				case "Single":
+				case "Double":
+				case "Decimal":
+				case "BigInteger":
+				case "String":
+					return true;
+				default:
+					return base.CanConvertFrom(context, sourceType);
+			}
+		}
+
+		public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
+		{
+			switch (destinationType.Name)
+			{
+				case "Int16":
+				case "Int32":
+				case "Int64":
+				case "Single":
+				case "Double":
+				case "BigInteger":
+				case "String":
+					return true;
+				default:
+					return base.CanConvertTo(context, destinationType);
+			}
+		}
+
+		public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
+		{
+			if (value is Int16 || value is Int32) { return new BigDecimal((Int32)value); }
+			else if (value is Int64) { return new BigDecimal((Int64)value); }
+			else if (value is Single) { return new BigDecimal((Single)value); }
+			else if (value is double) { return new BigDecimal((double)value); }
+			else if (value is BigInteger) { return new BigDecimal((BigInteger)value); }
+			else if (value is string) { return BigDecimal.Parse((string)value); }
+			else { return base.ConvertFrom(context, culture, value); }
+		}
+
+		public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+		{
+			BigDecimal from = (BigDecimal)value;
+			switch (destinationType.Name)
+			{
+				case "Int16":
+					return (Int16)from;
+				case "Int32":
+					return (Int32)from;
+				case "Int64":
+					return (Int64)((Int32)from);
+				case "Single":
+					return (Single)from;
+				case "Double":
+					return (double)from;
+				case "BigInteger":
+					return (BigInteger)from;
+				case "String":
+					return from.ToString();
+				default:
+					return base.ConvertTo(context, culture, value, destinationType);
+			}
+		}
+
+		public override bool IsValid(ITypeDescriptorContext context, object value)
+		{
+			switch (value.GetType().Name)
+			{
+				case "Int16":
+				case "Int32":
+				case "Int64":
+				case "Single":
+				case "Double":
+				case "BigInteger":
+				case "String":
+					return true;
+				default:
+					return base.IsValid(context, value);
+			}
+		}
+	}
+
+
+	public class FractionTypeConverter : TypeConverter
+	{
+		public FractionTypeConverter()
+			: base()
+		{ }
+
+		public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
+		{
+			switch (sourceType.Name)
+			{
+				case "Int16":
+				case "Int32":
+				case "Int64":
+				case "Single":
+				case "Double":
+				case "Decimal":
+				case "BigInteger":
+				case "String":
+					return true;
+				default:
+					return base.CanConvertFrom(context, sourceType);
+			}
+		}
+
+		public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
+		{
+			switch (destinationType.Name)
+			{
+				case "Int32":
+				case "Single":
+				case "Double":
+				case "BigInteger":
+				case "String":
+					return true;
+				default:
+					return base.CanConvertTo(context, destinationType);
+			}
+		}
+
+		public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
+		{
+			if (value is Int16 || value is Int32) { return new Fraction((Int32)value); }
+			else if (value is Int64) { return new Fraction((Int32)value); }
+			else if (value is Single) { return new Fraction((Single)value); }
+			else if (value is double) { return new Fraction((double)value); }
+			else if (value is BigInteger) { return new Fraction((BigInteger)value); }
+			else if (value is string) { return Fraction.Parse((string)value); }
+			else { return base.ConvertFrom(context, culture, value); }
+		}
+
+		public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+		{
+			Fraction from = (Fraction)value;
+			switch (destinationType.Name)
+			{
+				case "Int32":
+					{
+						BigInteger result = from.Numerator / from.Denominator;
+						return (int)result;
+					}
+				case "Single":
+					return (Single)from;
+				case "Double":
+					return (double)from;
+				case "BigInteger":
+					return (BigInteger)from;
+				case "String":
+					return from.ToString();
+				default:
+					return base.ConvertTo(context, culture, value, destinationType);
+			}
+		}
+
+		public override bool IsValid(ITypeDescriptorContext context, object value)
+		{
+			switch (value.GetType().Name)
+			{
+				case "Int16":
+				case "Int32":
+				case "Int64":
+				case "Single":
+				case "Double":
+				case "BigInteger":
+				case "String":
+					return true;
+				default:
+					return base.IsValid(context, value);
+			}
+		}
+	}
+
 }

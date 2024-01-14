@@ -16,7 +16,7 @@ namespace NiceCalc.Interpreter
 {
 	public static class ShuntingYardConverter
 	{
-		private static readonly string AllowedCharacters = Syntax.Numbers + Syntax.Operators + Syntax.Functions + "(,)/";
+		private static readonly string[] AllowedTokens = (Syntax.Numbers + Syntax.Operators + Syntax.Functions + "(,)/").ToCharArray().Select(c => c.ToString()).ToArray();
 
 		private static void AddToOutput(Queue<string> output, char value)
 		{
@@ -70,34 +70,36 @@ namespace NiceCalc.Interpreter
 			return result;
 		}
 
-		public static Queue<string> Convert(string infixNotationString)
+		public static Queue<string> Convert(List<string> tokens)
 		{
-			if (string.IsNullOrWhiteSpace(infixNotationString))
+			if (!tokens.Any())
 			{
-				return new Queue<string>(); ; // No-op
+				return new Queue<string>(); // No-op
 			}
 
-			string whitepaceSanitized = new string(infixNotationString.ToCharArray().Where(c => !char.IsWhiteSpace(c)).ToArray());
-
-			var unknownCharacters = whitepaceSanitized.Where(c => !AllowedCharacters.Contains(c));
-			if (unknownCharacters.Any())
+			var unknownTokens = tokens.Where(str => !str.All(c => Syntax.Numbers.Contains(c)) && !AllowedTokens.Contains(str));
+			if (unknownTokens.Any())
 			{
-				throw new ParsingException($"Expression contains unknown tokens: {{ {string.Join(", ", unknownCharacters)} }}.");
+				throw new ParsingException($"Expression contains unknown tokens: {{ {string.Join(", ", unknownTokens)} }}.");
 			}
 
-			string sanitizedString = new string(whitepaceSanitized.Where(c => AllowedCharacters.Contains(c)).ToArray());
+			string expr = string.Join("", tokens);
+
+			var dumbTokens = DumbTokenizer(expr);
+
+
 
 			Queue<string> output = new Queue<string>();
 			Stack<char> operatorStack = new Stack<char>();
-			Queue<string> inputQueue = DumbTokenizer(sanitizedString);
+			Queue<string> inputQueue = new Queue<string>(tokens);
 
 			string current = null;
 			while (inputQueue.Any())
 			{
 				current = inputQueue.Dequeue();
 
-
-				if (Syntax.IsNumeric(current))
+				//if (Syntax.IsNumeric(current))
+				if(current.All(c => Syntax.Numbers.Contains(c)))
 				{
 					AddToOutput(output, current);
 				}

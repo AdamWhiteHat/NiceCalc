@@ -1,5 +1,5 @@
 {
-    "CopyInputToOutput": true,
+    "CopyInputToOutput": false,
     "CtrlEnterForTotal": false,
     "PreferFractionsResult": false,
     "Precision": 50,

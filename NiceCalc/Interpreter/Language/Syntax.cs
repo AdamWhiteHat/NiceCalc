@@ -27,6 +27,7 @@ namespace NiceCalc.Interpreter.Language
 		public static readonly char Product = '∏';
 		public static readonly char Pi = 'π';
 		public static readonly char E = 'e';
+		public static readonly char UnaryNegation = '-';
 
 		public static readonly List<string> ReservedIdentifiers;
 
@@ -84,6 +85,14 @@ namespace NiceCalc.Interpreter.Language
 		public static bool IsNumeric(string text)
 		{
 			return !string.IsNullOrWhiteSpace(text) && text.All(c => Numbers.Contains(c));
+		}
+
+		/// <summary>
+		/// Tests if a string consists of only alphabetical (letter) characters.
+		/// </summary>		
+		public static bool IsAlpha(string text)
+		{
+			return !string.IsNullOrWhiteSpace(text) && text.All(c => char.IsLetter(c));
 		}
 	}
 }

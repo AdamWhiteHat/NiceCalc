@@ -266,6 +266,13 @@ namespace NiceCalc.Execution
 			{
 				if (Stack.Count < 2)
 				{
+					//if (tokenChar == Syntax.UnaryNegation)
+					//{
+					//	string temp = Stack.Pop();
+					//	Stack.Push(Syntax.UnaryNegation.ToString() + temp);
+					//	return;
+					//}
+
 					throw new ParsingException("The algebraic string has not sufficient values in the expression for the number of operators.", token: tokenChar, stack: Stack);
 				}
 
