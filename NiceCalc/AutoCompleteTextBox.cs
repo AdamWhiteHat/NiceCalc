@@ -76,6 +76,7 @@ namespace NiceCalc
                     else
                     {
                         Clear();
+                        Raise_ClearOutput();
                         isHandled = true;
                     }
                     break;
