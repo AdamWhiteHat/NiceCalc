@@ -13,301 +13,347 @@ using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using System.Management;
+using NiceCalc.Tokenization;
 
 namespace NiceCalc
 {
-	public partial class MainForm : Form
-	{
-		public CalculatorSession CalculatorSession;
+    public partial class MainForm : Form
+    {
+        public CalculatorSession CalculatorSession;
 
-		private Settings CurrentSettings;
-		private ObservableDictionary<string, string> _variables;
+        private Settings CurrentSettings;
+        private ObservableDictionary<string, string> _variables;
 
-		public MainForm()
-		{
-			InitializeComponent();
-		}
+        public MainForm()
+        {
+            InitializeComponent();
+        }
 
-		private void MainForm_Shown(object sender, System.EventArgs e)
-		{
-			string[] autocompleteItems = new string[]
-			{
-					"#",
-					"abs",
-					"ceil",
-					"cos",
-					"divisors",
-					"factor",
-					"factorial",
-					"floor",
-					"gcd",
-					"isprime",
-					"lcm",
-					"ln",
-					"logn",
-					"nextprime",
-					"nthroot",
-					"pi",
-					"previousprime",
-					"round",
-					"sign",
-					"sin",
-					"sqrt",
-					"tan",
-					"trunc"
-				};
-			tbInput.AutoCompleteCustomSource = autocompleteItems;
+        private void MainForm_Shown(object sender, System.EventArgs e)
+        {
+            string[] autocompleteItems = new string[]
+            {
+                    "#",
+                    "abs",
+                    "ceil",
+                    "cos",
+                    "divisors",
+                    "factor",
+                    "factorial",
+                    "floor",
+                    "gcd",
+                    "isprime",
+                    "lcm",
+                    "ln",
+                    "logn",
+                    "nextprime",
+                    "nthroot",
+                    "pi",
+                    "previousprime",
+                    "round",
+                    "sign",
+                    "sin",
+                    "sqrt",
+                    "tan",
+                    "trunc"
+                };
+            tbInput.AutoCompleteCustomSource = autocompleteItems;
 
-			tbInput.KeyDown += tbInput_KeyDown;
+            tbInput.KeyDown += tbInput_KeyDown;
 
-			CurrentSettings = new Settings();
-			CurrentSettings.Load();
-			LoadCurrentSetting(CurrentSettings);
-			RegisterSettingsEventHandles();
-		}
+            CurrentSettings = new Settings();
+            CurrentSettings.Load();
+            LoadCurrentSetting(CurrentSettings);
+            RegisterSettingsEventHandles();
+            CalculatorSession = new CalculatorSession(cbPreferFractionsResult.Checked ? NumericType.Rational : NumericType.Real);
 
-		private void tbInput_KeyDown(object sender, KeyEventArgs e)
-		{
-			bool executeExpression = false;
+            ResetBoundVariables();
+        }
 
-			if (e.KeyCode == Keys.F5)
-			{
-				executeExpression = true;
-			}
-			else if ((e.KeyCode == Keys.Enter) && e.Shift)
-			{
-				executeExpression = true;
-			}
-			else if ((e.KeyCode == Keys.Enter) && !(CurrentSettings.CtrlEnterForTotal ^ e.Control))
-			{
-				executeExpression = true;
-			}
-			else if (e.KeyCode == Keys.Escape)
-			{
-				if (!tbInput.IsSuggestionBoxVisible)
-				{
-					tbInput.Clear();
-					tbOutput.Clear();
-				}
-			}
+        private void tbInput_KeyDown(object sender, KeyEventArgs e)
+        {
+            bool executeExpression = false;
 
-			if (executeExpression)
-			{
-				e.Handled = true;
-				e.SuppressKeyPress = true;
-				ProcessLines(tbInput.Lines);
-			}
-		}
+            if (e.KeyCode == Keys.F5)
+            {
+                executeExpression = true;
+            }
+            else if ((e.KeyCode == Keys.Enter) && e.Shift)
+            {
+                executeExpression = true;
+            }
+            else if ((e.KeyCode == Keys.Enter) && !(CurrentSettings.CtrlEnterForTotal ^ e.Control))
+            {
+                executeExpression = true;
+            }
+            else if (e.Control && e.KeyCode == Keys.Z)
+            {
+                if (tbInput.CanUndo)
+                {
+                    tbInput.Undo();                    
+                }
+            }
+            else if (e.Control && e.KeyCode == Keys.Y)
+            {
+                if (tbInput.CanRedo)
+                {
+                    tbInput.Redo();
+                }
+            }
+            else if (e.Control && e.KeyCode == Keys.A)
+            {
+                tbInput.SelectAll();
+            }
+            else if (e.KeyCode == Keys.Escape)
+            {
+                if (!tbInput.IsSuggestionBoxVisible)
+                {
+                    tbInput.Clear();
+                    tbOutput.Clear();
+                }
+            }
+
+            if (executeExpression)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                ProcessLines(tbInput.Lines);
+            }
+        }
+
+        private void ResetBoundVariables()
+        {
+            listBoxVariables.Items.Clear();
+            CalculatorSession.BindToList(this.listBoxVariables.Items);
+        }
 
 
-		private void ProcessLines(string[] lines)
-		{
-			tbOutput.Clear();
-			tbOutput.ClearUndo();
+        private void ProcessLines(string[] lines)
+        {
+            tbOutput.Clear();
+            tbOutput.ClearUndo();
 
-			if (CalculatorSession == null)
-			{
-				CalculatorSession = new CalculatorSession(cbPreferFractionsResult.Checked ? NumericType.Rational : NumericType.Real);
-
-				listBoxVariables.Items.Clear();
-
-				CalculatorSession.BindToList(this.listBoxVariables.Items);
+            if (CalculatorSession == null)
+            {
+                CalculatorSession = new CalculatorSession(cbPreferFractionsResult.Checked ? NumericType.Rational : NumericType.Real);
 
 
-				//listBoxVariables.DataBindings.Add(new Binding("Items", CalculatorSession.Variables, null));
-				//listBoxVariables.DataSource = CalculatorSession.Variables.GetList(); // new BindingSource((IEnumerable<KeyValuePair<string, string>>)CalculatorSession.Variables, null);
-				//listBoxVariables.FormattingEnabled = true;
-				//listBoxVariables.Format += ListBoxVariables_Format;
 
-				//_variables = calculatorSessionBindingSource.List;
 
-			}
+                //listBoxVariables.DataBindings.Add(new Binding("Items", CalculatorSession.Variables, null));
+                //listBoxVariables.DataSource = CalculatorSession.Variables.GetList(); // new BindingSource((IEnumerable<KeyValuePair<string, string>>)CalculatorSession.Variables, null);
+                //listBoxVariables.FormattingEnabled = true;
+                //listBoxVariables.Format += ListBoxVariables_Format;
 
-			foreach (string line in lines)
-			{
-				if (!string.IsNullOrWhiteSpace(line))
-				{
-					List<string> expressions = new List<string>();
+                //_variables = calculatorSessionBindingSource.List;
 
-					bool multiExpressionedLine = line.Contains(';');
-					if (multiExpressionedLine)
-					{
-						expressions.AddRange(line.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
-					}
-					else
-					{
-						expressions.Add(line);
-					}
+            }
 
-					foreach (string expression in expressions)
-					{
-						int leftSpaces = expression.AsEnumerable().TakeWhile(c => char.IsWhiteSpace(c)).Count();
-						int rightSpaces = expression.AsEnumerable().Reverse().TakeWhile(c => char.IsWhiteSpace(c)).Count();
 
-						if (!multiExpressionedLine && CurrentSettings.CopyInputToOutput)
-						{
-							tbOutput.AppendText(expression + " = ");
-						}
 
-						try
-						{
-							string result = CalculatorSession.Eval(expression);
+            foreach (string line in lines)
+            {
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    List<string> expressions = new List<string>();
 
-							if (leftSpaces > 0)
-							{
-								tbOutput.AppendText(new string(Enumerable.Repeat(' ', leftSpaces).ToArray()));
-							}
-							tbOutput.AppendText(result);
-							if (rightSpaces > 0)
-							{
-								tbOutput.AppendText(new string(Enumerable.Repeat(' ', rightSpaces).ToArray()));
-							}
 
-							if (multiExpressionedLine)
-							{
-								tbOutput.AppendText(";");
-							}
-						}
-						catch (Exception ex)
-						{
-							tbOutput.AppendText(ex.ToString());
-						}
-					}
-				}
-				tbOutput.AppendText(Environment.NewLine);
-			}
-		}
 
-		private void ListBoxVariables_Format(object sender, ListControlConvertEventArgs e)
-		{
-			KeyValuePair<string, string> item = (KeyValuePair<string, string>)e.ListItem;
-			e.Value = string.Format("{0}({1})", item.Key, item.Value);
-		}
 
-		void BtnFunctionSimple_Click(object sender, EventArgs e)
-		{
-			Button btn = (Button)sender;
 
-			int start = tbInput.SelectionStart;
-			int end = start + tbInput.SelectionLength;
 
-			string text = tbInput.Text;
+                    bool multiExpressionedLine = line.Contains(';');
+                    if (multiExpressionedLine)
+                    {
+                        expressions.AddRange(line.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
+                    }
+                    else
+                    {
+                        expressions.Add(line);
+                    }
 
-			int insertionLength = btn.Text.Length;
-			text = text.Insert(end, btn.Text);
+                    foreach (string expression in expressions)
+                    {
+                        int leftSpaces = expression.AsEnumerable().TakeWhile(c => char.IsWhiteSpace(c)).Count();
+                        int rightSpaces = expression.AsEnumerable().Reverse().TakeWhile(c => char.IsWhiteSpace(c)).Count();
 
-			tbInput.Text = text;
+                        if (!multiExpressionedLine && CurrentSettings.CopyInputToOutput)
+                        {
+                            tbOutput.AppendText(expression + " = ");
+                        }
 
-			tbInput.SelectionStart = end + insertionLength;
-			tbInput.SelectionLength = 0;
+                        try
+                        {
 
-			tbInput.Focus();
-		}
+                            string toEval = expression.Replace(",", "").Replace(" ", "").Replace("\t", "");
 
-		void BtnFunctionParameterize_Click(object sender, EventArgs e)
-		{
-			Button btn = (Button)sender;
+                            NumberToken resultToken = CalculatorSession.Eval(toEval);
 
-			int start = tbInput.SelectionStart;
-			int end = start + tbInput.SelectionLength;
+                            string result = "";
+                            if (CurrentSettings.PreferFractionsResult)
+                            {
+                                result = resultToken.RationalValue.ToString();
+                            }
+                            else
+                            {
+                                result = resultToken.ToString();
+                            }
 
-			string text = tbInput.Text;
+                            if (leftSpaces > 0)
+                            {
+                                tbOutput.AppendText(new string(Enumerable.Repeat(' ', leftSpaces).ToArray()));
+                            }
+                            tbOutput.AppendText(result);
+                            if (rightSpaces > 0)
+                            {
+                                tbOutput.AppendText(new string(Enumerable.Repeat(' ', rightSpaces).ToArray()));
+                            }
 
-			text = text.Insert(end, ")");
-			text = text.Insert(start, btn.Text + "(");
+                            if (multiExpressionedLine)
+                            {
+                                tbOutput.AppendText(";");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            tbOutput.AppendText(ex.ToString());
+                        }
+                    }
+                }
+                tbOutput.AppendText(Environment.NewLine);
+            }
+        }
 
-			tbInput.Text = text;
+        private void ListBoxVariables_Format(object sender, ListControlConvertEventArgs e)
+        {
+            KeyValuePair<string, string> item = (KeyValuePair<string, string>)e.ListItem;
+            e.Value = string.Format("{0}({1})", item.Key, item.Value);
+        }
 
-			int restoreLocation = text.IndexOf('(', start) + 1;
-			tbInput.SelectionStart = restoreLocation;
-			tbInput.SelectionLength = 0;
+        void BtnFunctionSimple_Click(object sender, EventArgs e)
+        {
+            Button btn = (Button)sender;
 
-			tbInput.Focus();
-		}
+            int start = tbInput.SelectionStart;
+            int end = start + tbInput.SelectionLength;
 
-		private void cbExpandPanel_CheckedChanged(object sender, EventArgs e)
-		{
-			if (cbExpandPanel.Checked)
-			{
-				groupVariables.Size = groupVariables.MaximumSize;
-				cbExpandPanel.ImageIndex = 1;
-			}
-			else
-			{
-				groupVariables.Size = groupVariables.MinimumSize;
-				cbExpandPanel.ImageIndex = 0;
-			}
-		}
+            string text = tbInput.Text;
 
-		#region CurrentSettings <=> UI Controls
+            int insertionLength = btn.Text.Length;
+            text = text.Insert(end, btn.Text);
 
-		private void LoadCurrentSetting(Settings currentSettings)
-		{
-			this.Width = currentSettings.WindowWidth;
-			this.Height = currentSettings.WindowHeight;
-			Point location = new Point(currentSettings.WindowLocationX, currentSettings.WindowLocationY);
-			this.Location = location;
+            tbInput.Text = text;
 
-			cbCopyInputToOutput.Checked = currentSettings.CopyInputToOutput;
-			cbCtrlEnterForTotal.Checked = currentSettings.CtrlEnterForTotal;
-			cbPreferFractionsResult.Checked = currentSettings.PreferFractionsResult;
+            tbInput.SelectionStart = end + insertionLength;
+            tbInput.SelectionLength = 0;
 
-			numericPrecision.Value = currentSettings.Precision;
-			BigDecimal.Precision = currentSettings.Precision;
+            tbInput.Focus();
+        }
 
-			int splitterDistance = splitContainer_LeftRight.Size.Width - splitContainer_LeftRight.SplitterWidth - CurrentSettings.RightPanelWidth;
-			splitContainer_LeftRight.SplitterDistance = splitterDistance;
-		}
+        void BtnFunctionParameterize_Click(object sender, EventArgs e)
+        {
+            Button btn = (Button)sender;
 
-		private void RegisterSettingsEventHandles()
-		{
-			cbCopyInputToOutput.CheckedChanged += CbCopyInputToOutput_CheckedChanged;
-			cbCtrlEnterForTotal.CheckedChanged += CbCtrlEnterForTotal_CheckedChanged;
-			cbPreferFractionsResult.CheckedChanged += CbUseFractions_CheckedChanged;
-			numericPrecision.ValueChanged += NumericPrecision_ValueChanged;
-			FormClosing += MainForm_FormClosing;
-		}
+            int start = tbInput.SelectionStart;
+            int end = start + tbInput.SelectionLength;
 
-		private void CbUseFractions_CheckedChanged(object sender, EventArgs e)
-		{
-			CurrentSettings.PreferFractionsResult = cbPreferFractionsResult.Checked;
-			CalculatorSession.PreferredOutputFormat = cbPreferFractionsResult.Checked ? NumericType.Rational : NumericType.Real;
-		}
+            string text = tbInput.Text;
 
-		private void CbCopyInputToOutput_CheckedChanged(object sender, EventArgs e)
-		{
-			CurrentSettings.CopyInputToOutput = cbCopyInputToOutput.Checked;
-		}
+            text = text.Insert(end, ")");
+            text = text.Insert(start, btn.Text + "(");
 
-		private void CbCtrlEnterForTotal_CheckedChanged(object sender, EventArgs e)
-		{
-			CurrentSettings.CtrlEnterForTotal = cbCtrlEnterForTotal.Checked;
-		}
+            tbInput.Text = text;
 
-		private void NumericPrecision_ValueChanged(object sender, EventArgs e)
-		{
-			CurrentSettings.Precision = (int)numericPrecision.Value;
-			BigDecimal.Precision = CurrentSettings.Precision;
-		}
+            int restoreLocation = text.IndexOf('(', start) + 1;
+            tbInput.SelectionStart = restoreLocation;
+            tbInput.SelectionLength = 0;
 
-		private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
-		{
-			CurrentSettings.WindowLocationX = this.Location.X;
-			CurrentSettings.WindowLocationY = this.Location.Y;
-			CurrentSettings.WindowWidth = this.Width;
-			CurrentSettings.WindowHeight = this.Height;
+            tbInput.Focus();
+        }
 
-			CurrentSettings.CopyInputToOutput = cbCopyInputToOutput.Checked;
-			CurrentSettings.CtrlEnterForTotal = cbCtrlEnterForTotal.Checked;
-			CurrentSettings.PreferFractionsResult = cbPreferFractionsResult.Checked;
+        private void cbExpandPanel_CheckedChanged(object sender, EventArgs e)
+        {
+            if (cbExpandPanel.Checked)
+            {
+                groupVariables.Size = groupVariables.MaximumSize;
+                cbExpandPanel.ImageIndex = 1;
+            }
+            else
+            {
+                groupVariables.Size = groupVariables.MinimumSize;
+                cbExpandPanel.ImageIndex = 0;
+            }
+        }
 
-			int rightPanelWidth = splitContainer_LeftRight.Size.Width - splitContainer_LeftRight.SplitterDistance - splitContainer_LeftRight.SplitterWidth;
-			CurrentSettings.RightPanelWidth = rightPanelWidth;
+        #region CurrentSettings <=> UI Controls
 
-			CurrentSettings.Save();
-		}
+        private void LoadCurrentSetting(Settings currentSettings)
+        {
+            this.Width = currentSettings.WindowWidth;
+            this.Height = currentSettings.WindowHeight;
+            Point location = new Point(currentSettings.WindowLocationX, currentSettings.WindowLocationY);
+            this.Location = location;
 
-		#endregion
+            cbCopyInputToOutput.Checked = currentSettings.CopyInputToOutput;
+            cbCtrlEnterForTotal.Checked = currentSettings.CtrlEnterForTotal;
+            cbPreferFractionsResult.Checked = currentSettings.PreferFractionsResult;
 
-	}
+            numericPrecision.Value = currentSettings.Precision;
+            BigDecimal.Precision = currentSettings.Precision;
+
+            int splitterDistance = splitContainer_LeftRight.Size.Width - splitContainer_LeftRight.SplitterWidth - CurrentSettings.RightPanelWidth;
+            splitContainer_LeftRight.SplitterDistance = splitterDistance;
+        }
+
+        private void RegisterSettingsEventHandles()
+        {
+            cbCopyInputToOutput.CheckedChanged += CbCopyInputToOutput_CheckedChanged;
+            cbCtrlEnterForTotal.CheckedChanged += CbCtrlEnterForTotal_CheckedChanged;
+            cbPreferFractionsResult.CheckedChanged += CbUseFractions_CheckedChanged;
+            numericPrecision.ValueChanged += NumericPrecision_ValueChanged;
+            FormClosing += MainForm_FormClosing;
+        }
+
+        private void CbUseFractions_CheckedChanged(object sender, EventArgs e)
+        {
+            CurrentSettings.PreferFractionsResult = cbPreferFractionsResult.Checked;
+            CalculatorSession.PreferredOutputFormat = cbPreferFractionsResult.Checked ? NumericType.Rational : NumericType.Real;
+        }
+
+        private void CbCopyInputToOutput_CheckedChanged(object sender, EventArgs e)
+        {
+            CurrentSettings.CopyInputToOutput = cbCopyInputToOutput.Checked;
+        }
+
+        private void CbCtrlEnterForTotal_CheckedChanged(object sender, EventArgs e)
+        {
+            CurrentSettings.CtrlEnterForTotal = cbCtrlEnterForTotal.Checked;
+        }
+
+        private void NumericPrecision_ValueChanged(object sender, EventArgs e)
+        {
+            CurrentSettings.Precision = (int)numericPrecision.Value;
+            BigDecimal.Precision = CurrentSettings.Precision;
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            CurrentSettings.WindowLocationX = this.Location.X;
+            CurrentSettings.WindowLocationY = this.Location.Y;
+            CurrentSettings.WindowWidth = this.Width;
+            CurrentSettings.WindowHeight = this.Height;
+
+            CurrentSettings.CopyInputToOutput = cbCopyInputToOutput.Checked;
+            CurrentSettings.CtrlEnterForTotal = cbCtrlEnterForTotal.Checked;
+            CurrentSettings.PreferFractionsResult = cbPreferFractionsResult.Checked;
+
+            int rightPanelWidth = splitContainer_LeftRight.Size.Width - splitContainer_LeftRight.SplitterDistance - splitContainer_LeftRight.SplitterWidth;
+            CurrentSettings.RightPanelWidth = rightPanelWidth;
+
+            CurrentSettings.Save();
+        }
+
+        #endregion
+
+    }
 }

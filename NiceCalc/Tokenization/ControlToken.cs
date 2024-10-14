@@ -20,7 +20,7 @@ namespace NiceCalc.Tokenization
 		public ControlToken(char token)
 		{
 			_symbol = token;
-			if (Syntax.ControlTokens.Contains(_symbol))
+			if (!Syntax.ControlTokens.Contains(_symbol))
 			{
 				throw new ParsingException($"The symbol '{_symbol}' is not supported by this token type ({nameof(ControlToken)}) yet!");
 			}

@@ -43,6 +43,7 @@ namespace NiceCalc.Execution.Implementation
 			{ '⎷', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.SquareRoot(i, BigDecimal.Precision)) }, // sqrt
 			{ '|', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Abs(i)) },  // abs	
 			{ '±', new Func<BigDecimal, BigDecimal>((BigDecimal i) => i.Sign) },     // sign
+			{ '-', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Negate(i)) },  // -	
 			{ '!', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimalAdapter.Factorial(i)) },   // factorial
 			{ 'Ə', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Ln(i, BigDecimal.Precision)) },    // ln
 			{ 'ⅇ', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Exp(i, BigDecimal.Precision)) },    // Exp

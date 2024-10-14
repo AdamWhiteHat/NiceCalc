@@ -71,8 +71,6 @@ namespace NiceCalc.Interpreter
 				return new Queue<Token>(); // No-op
 			}
 
-
-
 			Queue<Token> output = new Queue<Token>();
 			Stack<Token> operatorStack = new Stack<Token>();
 			Queue<Token> inputQueue = new Queue<Token>(tokens);

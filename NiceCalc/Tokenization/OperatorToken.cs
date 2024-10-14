@@ -7,18 +7,18 @@ using NiceCalc.Execution;
 
 namespace NiceCalc.Tokenization
 {
-	public class OperatorToken : Token
-	{
-		public int ParameterCount;
-		public override char Symbol { get { return _symbol; } }
-		public override TokenType TokenType { get { return TokenType.Operation; } }
+    public class OperatorToken : Token
+    {
+        public int ParameterCount;
+        public override char Symbol { get { return _symbol; } }
+        public override TokenType TokenType { get { return TokenType.Operation; } }
 
-		private char _symbol;
+        private char _symbol;
 
-		public OperatorToken(char operation)
-		{
-			_symbol = operation;
-			ParameterCount = Functions.GetParameterCount(_symbol);
-		}
-	}
+        public OperatorToken(char operation)
+        {
+            _symbol = operation;
+            ParameterCount = 2;
+        }
+    }
 }
