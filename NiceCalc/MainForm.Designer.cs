@@ -121,7 +121,7 @@ namespace NiceCalc
             this.splitContainer_TopBottom.Panel2.Cursor = System.Windows.Forms.Cursors.Default;
             this.splitContainer_TopBottom.Panel2.Padding = new System.Windows.Forms.Padding(4);
             this.splitContainer_TopBottom.Panel2MinSize = 150;
-            this.splitContainer_TopBottom.Size = new System.Drawing.Size(761, 538);
+            this.splitContainer_TopBottom.Size = new System.Drawing.Size(755, 538);
             this.splitContainer_TopBottom.SplitterDistance = 296;
             this.splitContainer_TopBottom.SplitterWidth = 10;
             this.splitContainer_TopBottom.TabIndex = 3;
@@ -135,7 +135,7 @@ namespace NiceCalc
             this.tbOutput.Margin = new System.Windows.Forms.Padding(4);
             this.tbOutput.Name = "tbOutput";
             this.tbOutput.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this.tbOutput.Size = new System.Drawing.Size(753, 224);
+            this.tbOutput.Size = new System.Drawing.Size(747, 224);
             this.tbOutput.TabIndex = 26;
             this.tbOutput.Text = "";
             // 
@@ -145,7 +145,7 @@ namespace NiceCalc
             this.cbCopyInputToOutput.BackColor = System.Drawing.SystemColors.Control;
             this.cbCopyInputToOutput.Checked = true;
             this.cbCopyInputToOutput.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbCopyInputToOutput.Location = new System.Drawing.Point(5, 281);
+            this.cbCopyInputToOutput.Location = new System.Drawing.Point(5, 249);
             this.cbCopyInputToOutput.Margin = new System.Windows.Forms.Padding(4);
             this.cbCopyInputToOutput.Name = "cbCopyInputToOutput";
             this.cbCopyInputToOutput.Size = new System.Drawing.Size(162, 22);
@@ -176,7 +176,7 @@ namespace NiceCalc
             this.splitContainer_LeftRight.Panel2.Cursor = System.Windows.Forms.Cursors.Default;
             this.splitContainer_LeftRight.Panel2MinSize = 225;
             this.splitContainer_LeftRight.Size = new System.Drawing.Size(1003, 538);
-            this.splitContainer_LeftRight.SplitterDistance = 761;
+            this.splitContainer_LeftRight.SplitterDistance = 755;
             this.splitContainer_LeftRight.SplitterWidth = 10;
             this.splitContainer_LeftRight.TabIndex = 2;
             // 
@@ -201,7 +201,7 @@ namespace NiceCalc
             this.flowLayoutPanel_RightToolbar.MinimumSize = new System.Drawing.Size(225, 2);
             this.flowLayoutPanel_RightToolbar.Name = "flowLayoutPanel_RightToolbar";
             this.flowLayoutPanel_RightToolbar.Padding = new System.Windows.Forms.Padding(1);
-            this.flowLayoutPanel_RightToolbar.Size = new System.Drawing.Size(232, 538);
+            this.flowLayoutPanel_RightToolbar.Size = new System.Drawing.Size(238, 538);
             this.flowLayoutPanel_RightToolbar.TabIndex = 1;
             // 
             // flowLayoutPanel_Precision
@@ -432,7 +432,7 @@ namespace NiceCalc
             this.flowToolbarPanel_Row3.Controls.Add(this.btnSqrt);
             this.flowToolbarPanel_Row3.Controls.Add(this.btnPow);
             this.flowToolbarPanel_Row3.Controls.Add(this.btnLogn);
-            this.flowToolbarPanel_Row3.Location = new System.Drawing.Point(1, 123);
+            this.flowToolbarPanel_Row3.Location = new System.Drawing.Point(89, 91);
             this.flowToolbarPanel_Row3.Margin = new System.Windows.Forms.Padding(0);
             this.flowToolbarPanel_Row3.MinimumSize = new System.Drawing.Size(2, 32);
             this.flowToolbarPanel_Row3.Name = "flowToolbarPanel_Row3";
@@ -487,7 +487,7 @@ namespace NiceCalc
             this.flowToolbarPanel_Row4.Controls.Add(this.btnSin);
             this.flowToolbarPanel_Row4.Controls.Add(this.btnCos);
             this.flowToolbarPanel_Row4.Controls.Add(this.btnTan);
-            this.flowToolbarPanel_Row4.Location = new System.Drawing.Point(1, 155);
+            this.flowToolbarPanel_Row4.Location = new System.Drawing.Point(1, 123);
             this.flowToolbarPanel_Row4.Margin = new System.Windows.Forms.Padding(0);
             this.flowToolbarPanel_Row4.MinimumSize = new System.Drawing.Size(2, 32);
             this.flowToolbarPanel_Row4.Name = "flowToolbarPanel_Row4";
@@ -581,7 +581,7 @@ namespace NiceCalc
             this.flowToolbarPanel_Row5.Controls.Add(this.btnIsPrime);
             this.flowToolbarPanel_Row5.Controls.Add(this.btnFactor);
             this.flowToolbarPanel_Row5.Controls.Add(this.btnDivisors);
-            this.flowToolbarPanel_Row5.Location = new System.Drawing.Point(1, 187);
+            this.flowToolbarPanel_Row5.Location = new System.Drawing.Point(1, 155);
             this.flowToolbarPanel_Row5.Margin = new System.Windows.Forms.Padding(0);
             this.flowToolbarPanel_Row5.MinimumSize = new System.Drawing.Size(2, 32);
             this.flowToolbarPanel_Row5.Name = "flowToolbarPanel_Row5";
@@ -659,7 +659,7 @@ namespace NiceCalc
             this.cbCtrlEnterForTotal.BackColor = System.Drawing.SystemColors.Control;
             this.cbCtrlEnterForTotal.Checked = true;
             this.cbCtrlEnterForTotal.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbCtrlEnterForTotal.Location = new System.Drawing.Point(5, 251);
+            this.cbCtrlEnterForTotal.Location = new System.Drawing.Point(5, 219);
             this.cbCtrlEnterForTotal.Margin = new System.Windows.Forms.Padding(4);
             this.cbCtrlEnterForTotal.Name = "cbCtrlEnterForTotal";
             this.cbCtrlEnterForTotal.Size = new System.Drawing.Size(151, 22);
@@ -674,7 +674,7 @@ namespace NiceCalc
             this.groupVariables.Controls.Add(this.cbExpandPanel);
             this.groupVariables.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.groupVariables.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.groupVariables.Location = new System.Drawing.Point(5, 311);
+            this.groupVariables.Location = new System.Drawing.Point(5, 279);
             this.groupVariables.Margin = new System.Windows.Forms.Padding(4);
             this.groupVariables.MaximumSize = new System.Drawing.Size(192, 231);
             this.groupVariables.MinimumSize = new System.Drawing.Size(192, 30);
@@ -760,12 +760,13 @@ namespace NiceCalc
         "tan",
         "trunc"};
             this.tbInput.Cursor = System.Windows.Forms.Cursors.Default;
+            this.tbInput.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tbInput.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.tbInput.Location = new System.Drawing.Point(4, 4);
             this.tbInput.Margin = new System.Windows.Forms.Padding(4);
             this.tbInput.Name = "tbInput";
             this.tbInput.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this.tbInput.Size = new System.Drawing.Size(753, 288);
+            this.tbInput.Size = new System.Drawing.Size(747, 288);
             this.tbInput.TabIndex = 25;
             this.tbInput.Text = "";
             // 

@@ -26,6 +26,7 @@ namespace NiceCalc
 
         private bool _isAdded;
         private ListBox _listBox;
+        private string typedThusFar = string.Empty;
         private static readonly char[] Delimiters = new char[] { ' ', '\r', '\n', '\t', '(', ')' };
 
         public AutoCompleteTextBox()
@@ -33,7 +34,6 @@ namespace NiceCalc
         {
             InitializeComponent();
             AcceptsTab = true;
-            // this.AutoCompleteSource = 
             base.ShortcutsEnabled = true;
         }
 
@@ -48,6 +48,7 @@ namespace NiceCalc
             _isAdded = false;
 
             KeyDown += this_KeyDown;
+            MouseClick += AutoCompleteTextBox_MouseClick;
         }
 
         protected void Raise_ExecuteExpression()
@@ -59,8 +60,6 @@ namespace NiceCalc
         {
             ClearOutput?.Invoke(this, EventArgs.Empty);
         }
-
-        string typedThusFar = string.Empty;
 
         private void this_KeyDown(object sender, KeyEventArgs e)
         {
@@ -180,6 +179,11 @@ namespace NiceCalc
 
             HideListBox();
             typedThusFar = string.Empty;
+        }
+
+        private void AutoCompleteTextBox_MouseClick(object sender, MouseEventArgs e)
+        {
+            HideListBox();
         }
 
         private void listBox_Click(object sender, MouseEventArgs e)
