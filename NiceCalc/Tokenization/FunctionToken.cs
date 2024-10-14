@@ -18,7 +18,7 @@ namespace NiceCalc.Tokenization
 
         public FunctionToken(char symbol)
         {
-            if (!Syntax.Operators.Contains(symbol))
+            if (!Syntax.Functions.Contains(symbol))
             {
                 throw new InvalidOperationException(symbol.ToString());
             }

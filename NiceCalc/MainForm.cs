@@ -21,7 +21,7 @@ namespace NiceCalc
     {
         public CalculatorSession CalculatorSession;
 
-        private Settings CurrentSettings;
+        public static Settings CurrentSettings;
         private ObservableDictionary<string, string> _variables;
 
         public MainForm()
@@ -59,8 +59,6 @@ namespace NiceCalc
                 };
             tbInput.AutoCompleteCustomSource = autocompleteItems;
 
-            tbInput.KeyDown += tbInput_KeyDown;
-
             CurrentSettings = new Settings();
             CurrentSettings.Load();
             LoadCurrentSetting(CurrentSettings);
@@ -68,57 +66,19 @@ namespace NiceCalc
             CalculatorSession = new CalculatorSession(cbPreferFractionsResult.Checked ? NumericType.Rational : NumericType.Real);
 
             ResetBoundVariables();
+
+            tbInput.ExecuteExpression += TbInput_ExecuteExpression;
+            tbInput.ClearOutput += TbInput_ClearOutput;
         }
 
-        private void tbInput_KeyDown(object sender, KeyEventArgs e)
+        private void TbInput_ExecuteExpression(object sender, EventArgs e)
         {
-            bool executeExpression = false;
+            ProcessLines(tbInput.Lines);
+        }
 
-            if (e.KeyCode == Keys.F5)
-            {
-                executeExpression = true;
-            }
-            else if ((e.KeyCode == Keys.Enter) && e.Shift)
-            {
-                executeExpression = true;
-            }
-            else if ((e.KeyCode == Keys.Enter) && !(CurrentSettings.CtrlEnterForTotal ^ e.Control))
-            {
-                executeExpression = true;
-            }
-            else if (e.Control && e.KeyCode == Keys.Z)
-            {
-                if (tbInput.CanUndo)
-                {
-                    tbInput.Undo();                    
-                }
-            }
-            else if (e.Control && e.KeyCode == Keys.Y)
-            {
-                if (tbInput.CanRedo)
-                {
-                    tbInput.Redo();
-                }
-            }
-            else if (e.Control && e.KeyCode == Keys.A)
-            {
-                tbInput.SelectAll();
-            }
-            else if (e.KeyCode == Keys.Escape)
-            {
-                if (!tbInput.IsSuggestionBoxVisible)
-                {
-                    tbInput.Clear();
-                    tbOutput.Clear();
-                }
-            }
-
-            if (executeExpression)
-            {
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-                ProcessLines(tbInput.Lines);
-            }
+        private void TbInput_ClearOutput(object sender, EventArgs e)
+        {
+            tbOutput.Clear();
         }
 
         private void ResetBoundVariables()
@@ -126,7 +86,6 @@ namespace NiceCalc
             listBoxVariables.Items.Clear();
             CalculatorSession.BindToList(this.listBoxVariables.Items);
         }
-
 
         private void ProcessLines(string[] lines)
         {
@@ -137,30 +96,19 @@ namespace NiceCalc
             {
                 CalculatorSession = new CalculatorSession(cbPreferFractionsResult.Checked ? NumericType.Rational : NumericType.Real);
 
-
-
-
                 //listBoxVariables.DataBindings.Add(new Binding("Items", CalculatorSession.Variables, null));
                 //listBoxVariables.DataSource = CalculatorSession.Variables.GetList(); // new BindingSource((IEnumerable<KeyValuePair<string, string>>)CalculatorSession.Variables, null);
                 //listBoxVariables.FormattingEnabled = true;
                 //listBoxVariables.Format += ListBoxVariables_Format;
 
                 //_variables = calculatorSessionBindingSource.List;
-
             }
-
-
 
             foreach (string line in lines)
             {
                 if (!string.IsNullOrWhiteSpace(line))
                 {
                     List<string> expressions = new List<string>();
-
-
-
-
-
 
                     bool multiExpressionedLine = line.Contains(';');
                     if (multiExpressionedLine)

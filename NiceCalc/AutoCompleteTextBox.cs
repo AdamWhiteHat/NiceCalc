@@ -12,6 +12,9 @@ namespace NiceCalc
 {
     public class AutoCompleteTextBox : RichTextBox
     {
+        public event EventHandler ExecuteExpression;
+        public event EventHandler ClearOutput;
+
         public bool IsSuggestionBoxVisible { get { return _listBox.Visible; } }
 
         public string[] AutoCompleteCustomSource
@@ -23,16 +26,14 @@ namespace NiceCalc
 
         private bool _isAdded;
         private ListBox _listBox;
-        private string _formerValue;
         private static readonly char[] Delimiters = new char[] { ' ', '\r', '\n', '\t', '(', ')' };
-        //public List<string> SelectedValues => new List<string>(Text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
 
         public AutoCompleteTextBox()
             : base()
         {
             InitializeComponent();
             AcceptsTab = true;
-
+            // this.AutoCompleteSource = 
             base.ShortcutsEnabled = true;
         }
 
@@ -41,97 +42,159 @@ namespace NiceCalc
             _listBox = new ListBox();
             _listBox.Visible = false;
             _listBox.MouseClick += listBox_Click;
-            _listBox.KeyDown += listBox_KeyPress;
 
             ScrollBars = RichTextBoxScrollBars.Vertical;
 
             _isAdded = false;
-            _formerValue = string.Empty;
 
             KeyDown += this_KeyDown;
-            KeyUp += this_KeyUp;
-
         }
+
+        protected void Raise_ExecuteExpression()
+        {
+            ExecuteExpression?.Invoke(this, EventArgs.Empty);
+        }
+
+        protected void Raise_ClearOutput()
+        {
+            ClearOutput?.Invoke(this, EventArgs.Empty);
+        }
+
+        string typedThusFar = string.Empty;
 
         private void this_KeyDown(object sender, KeyEventArgs e)
         {
-            if (!EnableCustomAutoCompleteListbox())
+            bool isHandled = false;
+
+            switch (e.KeyCode)
             {
+                case Keys.Escape:
+                    if (IsSuggestionBoxVisible)
+                    {
+                        HideListBox();
+                        isHandled = true;
+                    }
+                    else
+                    {
+                        Clear();
+                        isHandled = true;
+                    }
+                    break;
+                case Keys.Tab:
+                    if (IsSuggestionBoxVisible)
+                    {
+                        e.SuppressKeyPress = true;
+                        e.Handled = true;
+                        InsertSuggestedWord((string)_listBox.SelectedItem);
+                        isHandled = true;
+                    }
+                    break;
+
+                case Keys.Enter:
+                    if (IsSuggestionBoxVisible)
+                    {
+                        e.SuppressKeyPress = true;
+                        e.Handled = true;
+                        InsertSuggestedWord((string)_listBox.SelectedItem);
+                        isHandled = true;
+                    }
+                    else if (e.Shift || (e.Control && MainForm.CurrentSettings.CtrlEnterForTotal) || (!e.Control && !MainForm.CurrentSettings.CtrlEnterForTotal))
+                    {
+                        e.SuppressKeyPress = true;
+                        e.Handled = true;
+                        Raise_ExecuteExpression();
+                        isHandled = true;
+                    }
+                    break;
+
+                case Keys.F5:
+                    if (!IsSuggestionBoxVisible)
+                    {
+                        e.SuppressKeyPress = true;
+                        e.Handled = true;
+                        Raise_ExecuteExpression();
+                        isHandled = true;
+                    }
+                    break;
+
+                case Keys.Down:
+                    ListBox_Next();
+                    isHandled = true;
+                    return;
+
+                case Keys.Up:
+                    ListBox_Previous();
+                    isHandled = true;
+                    return;
+
+                case Keys.Left:
+                case Keys.Right:
+                    HideListBox();
+                    isHandled = true;
+                    return;
+
+                case Keys.Z:
+                    if (e.Control && !IsSuggestionBoxVisible)
+                    {
+                        if (CanUndo)
+                        {
+                            Undo();
+                        }
+                        isHandled = true;
+                    }
+                    break;
+
+                case Keys.Y:
+                    if (e.Control && !IsSuggestionBoxVisible)
+                    {
+                        if (CanRedo)
+                        {
+                            Redo();
+                        }
+                        isHandled = true;
+                    }
+                    break;
+
+                case Keys.A:
+                    if (e.Control && !IsSuggestionBoxVisible)
+                    {
+                        SelectAll();
+                        isHandled = true;
+                    }
+                    break;
+            }
+
+            if (isHandled)
+            {
+                typedThusFar = string.Empty;
                 return;
             }
 
-            if (_listBox.Visible)
+            if (e.KeyCode >= Keys.A && e.KeyCode <= Keys.Z)
             {
-                switch (e.KeyCode)
-                {
-                    case Keys.Escape:
-                        {
-                            e.Handled = true;
-                            e.SuppressKeyPress = true;
-                            HideListBox();
-                            return;
-                        }
-                    case Keys.D9:
-                        {
-                            if (e.Shift)
-                            {
-                                InsertSuggestedWord((string)_listBox.SelectedItem);
-                                int pos = SelectionStart;
-                                this.Text = this.Text.Insert(pos, ")");
-                                SelectionStart = pos;
-                            }
-                            break;
-                        }
-                    case Keys.Tab:
-                        {
-                            InsertSuggestedWord((string)_listBox.SelectedItem);
-                            int pos = SelectionStart;
-                            this.Text = this.Text.Insert(pos, "()");
-                            SelectionStart = pos + 1;
-
-                            e.SuppressKeyPress = true;
-                            e.Handled = true;
-                            break;
-                        }
-                    case Keys.Down:
-                        {
-                            _listBox.SelectedIndex = System.Math.Min(_listBox.SelectedIndex + 1, _listBox.Items.Count - 1);
-                            break;
-                        }
-                    case Keys.Up:
-                        {
-                            _listBox.SelectedIndex = System.Math.Max(0, _listBox.SelectedIndex - 1);
-                            break;
-                        }
-                    case Keys.Enter:
-                    case Keys.Left:
-                    case Keys.Right:
-                        {
-                            HideListBox();
-                            break;
-                        }
-                }
+                string pressed = ((char)e.KeyValue).ToString().ToLower();
+                typedThusFar += pressed;
+                UpdateListBox(typedThusFar);
+                return;
             }
+
+            HideListBox();
+            typedThusFar = string.Empty;
         }
 
-        private void this_KeyUp(object sender, KeyEventArgs e)
+        private void listBox_Click(object sender, MouseEventArgs e)
         {
-            char pressedKey = (char)e.KeyValue;
+            InsertSuggestedWord((string)_listBox.SelectedItem);
+        }
 
-            if (_listBox.Visible)
-            {
-                if (e.KeyCode == Keys.Escape)
-                {
-                    e.Handled = true;
-                    e.SuppressKeyPress = true;
-                    HideListBox();
-                    return;
-                }
-            }
-            else if (e.KeyCode >= Keys.A && e.KeyCode <= Keys.Z)
-            {
-                UpdateListBox();
-            }
+        private void ListBox_Next()
+        {
+            _listBox.SelectedIndex = System.Math.Min(_listBox.SelectedIndex + 1, _listBox.Items.Count - 1);
+        }
+
+        private void ListBox_Previous()
+        {
+            _listBox.SelectedIndex = System.Math.Max(0, _listBox.SelectedIndex - 1);
         }
 
         internal bool EnableCustomAutoCompleteListbox()
@@ -144,55 +207,6 @@ namespace NiceCalc
         private void HideListBox()
         {
             _listBox.Visible = false;
-        }
-
-        private void listBox_Click(object sender, MouseEventArgs e)
-        {
-            InsertSuggestedWord((string)_listBox.SelectedItem);
-        }
-
-        protected override bool IsInputKey(Keys keyData)
-        {
-            switch (keyData)
-            {
-                case Keys.Escape:
-                case Keys.Tab:
-                    return true;
-                default:
-                    return base.IsInputKey(keyData);
-            }
-        }
-
-        protected override bool ProcessCmdKey(ref Message m, Keys keyData)
-        {
-            if (keyData == Keys.Escape)
-            {
-                if (_listBox.Visible)
-                {
-                    _listBox.Visible = false;
-                    return true;
-                }
-            }
-            return base.ProcessCmdKey(ref m, keyData);
-        }
-
-        private void listBox_KeyPress(object sender, KeyEventArgs e)
-        {
-            if (!EnableCustomAutoCompleteListbox() || !_listBox.Visible)
-            {
-                return;
-            }
-            if (e.KeyCode == Keys.Escape)
-            {
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-                HideListBox();
-                return;
-            }
-            else if (e.KeyCode == Keys.Enter)
-            {
-                InsertSuggestedWord((string)_listBox.SelectedItem);
-            }
         }
 
         private void ShowListBox()
@@ -227,27 +241,21 @@ namespace NiceCalc
 
             _listBox.Visible = true;
             _listBox.BringToFront();
+            _listBox.Focus();
         }
 
-        private void UpdateListBox()
+        private void UpdateListBox(string incompleteWord)
         {
             if (!EnableCustomAutoCompleteListbox())
             {
                 return;
             }
 
-            if (Text == _formerValue)
-            {
-                return;
-            }
-            _formerValue = Text;
-
-            string word = GetIncompleteWord(Text, SelectionStart);
-            if (word.Length > 0)
+            if (incompleteWord.Length > 0)
             {
                 string[] autoCompleteWords = AutoCompleteCustomSource.Cast<string>().ToArray();
                 string[] matches = Array.FindAll(autoCompleteWords,
-                                    x => (x.StartsWith(word, StringComparison.OrdinalIgnoreCase)/* && !SelectedValues.Contains(x)*/));
+                                    x => (x.StartsWith(incompleteWord, StringComparison.OrdinalIgnoreCase)/* && !SelectedValues.Contains(x)*/));
 
                 if (matches.Length > 0)
                 {
@@ -284,18 +292,6 @@ namespace NiceCalc
             }
         }
 
-        private static string GetIncompleteWord(string text, int caretPosition)
-        {
-            int pos = caretPosition;
-            int posStart = text.LastIndexOfAny(Delimiters, (pos < 1) ? 0 : pos - 1);
-            posStart = (posStart == -1) ? 0 : posStart + 1;
-            int posEnd = text.IndexOfAny(Delimiters, pos);
-            posEnd = (posEnd == -1) ? text.Length : posEnd;
-            int length = ((posEnd - posStart) < 0) ? 0 : posEnd - posStart;
-
-            return text.Substring(posStart, length);
-        }
-
         private void InsertSuggestedWord(string newTag)
         {
             string text = Text;
@@ -312,9 +308,22 @@ namespace NiceCalc
             SelectionStart = firstPart.Length;
 
             HideListBox();
-            _formerValue = Text;
+
+            pos = SelectionStart;
+            this.Text = this.Text.Insert(pos, "()");
+            SelectionStart = pos + 1;
         }
 
+        private static string GetIncompleteWord(string text, int caretPosition)
+        {
+            int pos = caretPosition;
+            int posStart = text.LastIndexOfAny(Delimiters, (pos < 1) ? 0 : pos - 1);
+            posStart = (posStart == -1) ? 0 : posStart + 1;
+            int posEnd = text.IndexOfAny(Delimiters, pos);
+            posEnd = (posEnd == -1) ? text.Length : posEnd;
+            int length = ((posEnd - posStart) < 0) ? 0 : posEnd - posStart;
 
+            return text.Substring(posStart, length);
+        }
     }
 }
