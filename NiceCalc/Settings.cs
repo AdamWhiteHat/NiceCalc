@@ -7,202 +7,228 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using System.Xml.Linq;
+using static System.Windows.Forms.LinkLabel;
 
 namespace NiceCalc
 {
-	public class Settings : INotifyPropertyChanged
-	{
-		public static string DefaultFilename = "Settings.json";
-		public event PropertyChangedEventHandler PropertyChanged;
+    public class Settings : INotifyPropertyChanged
+    {
+        public static string DefaultFilename = "Settings.json";
+        public static string ExceptionLogPath = Program.ExceptionLogPath;
+        public event PropertyChangedEventHandler PropertyChanged;
 
-		public bool CopyInputToOutput
-		{
-			get { return _copyInputToOutput; }
-			set
-			{
-				if (_copyInputToOutput != value)
-				{
-					_copyInputToOutput = value;
-					OnPropertyChanged();
-				}
-			}
-		}
-		private bool _copyInputToOutput;
+        [JsonIgnore]
+        public static TextBox OutputTextBox { get; set; }
 
-		public bool CtrlEnterForTotal
-		{
-			get { return _ctrlEnterForTotal; }
-			set
-			{
-				if (_ctrlEnterForTotal != value)
-				{
-					_ctrlEnterForTotal = value;
-					OnPropertyChanged();
-				}
-			}
-		}
-		private bool _ctrlEnterForTotal;
+        [JsonIgnore]
+        public static Action<string> LogOutputFunction
+        {
+            get
+            {
+                return new Action<string>((message) =>
+                {
+                    if (!string.IsNullOrEmpty(ExceptionLogPath))
+                    {
+                        File.AppendAllText(ExceptionLogPath, Environment.NewLine + message);
+                    }
 
-		public bool PreferFractionsResult
-		{
-			get { return _preferFractionsResult; }
-			set
-			{
-				if (_preferFractionsResult != value)
-				{
-					_preferFractionsResult = value;
-					OnPropertyChanged();
-				}
-			}
-		}
-		private bool _preferFractionsResult;
+                    if (OutputTextBox != null)
+                    {
+                        OutputTextBox.AppendText(Environment.NewLine + message);
+                    }
+                });
+            }
+        }
 
-		public int Precision
-		{
-			get { return _precision; }
-			set
-			{
-				if (_precision != value)
-				{
-					_precision = value;
-					OnPropertyChanged();
-				}
-			}
-		}
-		private int _precision;
+        public bool CopyInputToOutput
+        {
+            get { return _copyInputToOutput; }
+            set
+            {
+                if (_copyInputToOutput != value)
+                {
+                    _copyInputToOutput = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private bool _copyInputToOutput;
 
-		public int RightPanelWidth
-		{
-			get { return _rightPanelWidth; }
-			set
-			{
-				if (_rightPanelWidth != value)
-				{
-					_rightPanelWidth = value;
-					OnPropertyChanged();
-				}
-			}
-		}
-		private int _rightPanelWidth;
+        public bool CtrlEnterForTotal
+        {
+            get { return _ctrlEnterForTotal; }
+            set
+            {
+                if (_ctrlEnterForTotal != value)
+                {
+                    _ctrlEnterForTotal = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private bool _ctrlEnterForTotal;
 
-		public int WindowWidth
-		{
-			get { return _windowWidth; }
-			set
-			{
-				if (_windowWidth != value)
-				{
-					_windowWidth = value;
-					OnPropertyChanged();
-				}
-			}
-		}
-		private int _windowWidth;
+        public bool PreferFractionsResult
+        {
+            get { return _preferFractionsResult; }
+            set
+            {
+                if (_preferFractionsResult != value)
+                {
+                    _preferFractionsResult = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private bool _preferFractionsResult;
 
-		public int WindowHeight
-		{
-			get { return _windowHeight; }
-			set
-			{
-				if (_windowHeight != value)
-				{
-					_windowHeight = value;
-					OnPropertyChanged();
-				}
-			}
-		}
-		private int _windowHeight;
+        public int Precision
+        {
+            get { return _precision; }
+            set
+            {
+                if (_precision != value)
+                {
+                    _precision = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private int _precision;
 
-		public int WindowLocationX
-		{
-			get { return _windowLocationX; }
-			set
-			{
-				if (_windowLocationX != value)
-				{
-					_windowLocationX = value;
-					OnPropertyChanged();
-				}
-			}
-		}
-		private int _windowLocationX;
+        public int RightPanelWidth
+        {
+            get { return _rightPanelWidth; }
+            set
+            {
+                if (_rightPanelWidth != value)
+                {
+                    _rightPanelWidth = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private int _rightPanelWidth;
 
-		public int WindowLocationY
-		{
-			get { return _windowLocationY; }
-			set
-			{
-				if (_windowLocationY != value)
-				{
-					_windowLocationY = value;
-					OnPropertyChanged();
-				}
-			}
-		}
-		private int _windowLocationY;
+        public int WindowWidth
+        {
+            get { return _windowWidth; }
+            set
+            {
+                if (_windowWidth != value)
+                {
+                    _windowWidth = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private int _windowWidth;
 
-		protected bool IsDirty
-		{
-			get { return _isDirty; }
-			set
-			{
-				if (_isDirty != value)
-				{
-					_isDirty = value;
-					OnPropertyChanged();
-				}
-			}
-		}
-		private bool _isDirty;
+        public int WindowHeight
+        {
+            get { return _windowHeight; }
+            set
+            {
+                if (_windowHeight != value)
+                {
+                    _windowHeight = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private int _windowHeight;
 
-		protected string SettingsFilename { get; set; }
+        public int WindowLocationX
+        {
+            get { return _windowLocationX; }
+            set
+            {
+                if (_windowLocationX != value)
+                {
+                    _windowLocationX = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private int _windowLocationX;
 
-		public Settings()
-		{ }
+        public int WindowLocationY
+        {
+            get { return _windowLocationY; }
+            set
+            {
+                if (_windowLocationY != value)
+                {
+                    _windowLocationY = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private int _windowLocationY;
 
-		public virtual void Save()
-		{
-			if (IsDirty == true)
-			{
-				string json = JsonConvert.SerializeObject(this, Newtonsoft.Json.Formatting.Indented);
-				File.WriteAllText(SettingsFilename, json);
-				IsDirty = false;
-			}
-		}
+        protected bool IsDirty
+        {
+            get { return _isDirty; }
+            set
+            {
+                if (_isDirty != value)
+                {
+                    _isDirty = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private bool _isDirty;
 
-		public virtual void Load(string settingsFilename = null)
-		{
-			string filename = DefaultFilename;
-			if (!string.IsNullOrWhiteSpace(settingsFilename))
-			{
-				filename = settingsFilename;
-			}
-			SettingsFilename = Path.GetFullPath(filename);
+        protected string SettingsFilename { get; set; }
 
-			string json = File.ReadAllText(SettingsFilename);
-			Settings loaded = JsonConvert.DeserializeObject<Settings>(json);
-			SetProperties(loaded);
-		}
+        public Settings()
+        { }
 
-		protected virtual void SetProperties(Settings from)
-		{
-			this.CopyInputToOutput = from.CopyInputToOutput;
-			this.CtrlEnterForTotal = from.CtrlEnterForTotal;
-			this.Precision = from.Precision;
-			this.RightPanelWidth = from.RightPanelWidth;
-			this.WindowWidth = from.WindowWidth;
-			this.WindowHeight = from.WindowHeight;
-			this.WindowLocationX = from.WindowLocationX;
-			this.WindowLocationY = from.WindowLocationY;
+        public virtual void Save()
+        {
+            if (IsDirty == true)
+            {
+                string json = JsonConvert.SerializeObject(this, Newtonsoft.Json.Formatting.Indented);
+                File.WriteAllText(SettingsFilename, json);
+                IsDirty = false;
+            }
+        }
 
-			IsDirty = false;
-		}
+        public virtual void Load(string settingsFilename = null)
+        {
+            string filename = DefaultFilename;
+            if (!string.IsNullOrWhiteSpace(settingsFilename))
+            {
+                filename = settingsFilename;
+            }
+            SettingsFilename = Path.GetFullPath(filename);
 
-		protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-		{
-			this.IsDirty = true;
-			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-		}
-	}
+            string json = File.ReadAllText(SettingsFilename);
+            Settings loaded = JsonConvert.DeserializeObject<Settings>(json);
+            SetProperties(loaded);
+        }
+
+        protected virtual void SetProperties(Settings from)
+        {
+            this.CopyInputToOutput = from.CopyInputToOutput;
+            this.CtrlEnterForTotal = from.CtrlEnterForTotal;
+            this.Precision = from.Precision;
+            this.RightPanelWidth = from.RightPanelWidth;
+            this.WindowWidth = from.WindowWidth;
+            this.WindowHeight = from.WindowHeight;
+            this.WindowLocationX = from.WindowLocationX;
+            this.WindowLocationY = from.WindowLocationY;
+
+            IsDirty = false;
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            this.IsDirty = true;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
 }

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Collections;
+
 using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
@@ -199,7 +201,10 @@ namespace NiceCalc
 
         private void ListBox_Previous()
         {
-            _listBox.SelectedIndex = System.Math.Max(0, _listBox.SelectedIndex - 1);
+            if (_listBox.Controls.Count > 0)
+            {
+                _listBox.SelectedIndex = System.Math.Max(0, _listBox.SelectedIndex - 1);
+            }
         }
 
         internal bool EnableCustomAutoCompleteListbox()

@@ -5,47 +5,67 @@ using System.Windows.Forms;
 
 namespace NiceCalc
 {
-	internal static class Program
-	{
-		/// <summary>
-		///  The main entry point for the application.
-		/// </summary>
-		[STAThread]
-		static void Main()
-		{
-			Application.EnableVisualStyles();
-			Application.SetCompatibleTextRenderingDefault(false);
-			//Application.SetHighDpiMode(HighDpiMode.SystemAware);
-			AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-			Application.Run(new MainForm());
-		}
+    internal static class Program
+    {
+        /// <summary>
+        ///  The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        private static void Main()
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            //Application.SetHighDpiMode(HighDpiMode.SystemAware);
+            Application.ThreadException += Application_ThreadException;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            Application.Run(new MainForm());
+        }
 
-		public const string LogFilename = "Exception.log.txt";
+        public const string ExceptionLogPath = "Exception.log.txt";
 
-		private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-		{
-			try
-			{
-				Exception ex = (Exception)e.ExceptionObject;
+        private static void Application_ThreadException(object sender, System.Threading.ThreadExceptionEventArgs e)
+        {
+            HandleException(e.Exception);
+        }
 
-				List<string> lines = new List<string>();
-				lines.Add($"[{DateTime.Now.ToShortDateString()} at {DateTime.Now.ToShortTimeString()}] : Unhandled Exception Caught");
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            HandleException((Exception)e.ExceptionObject);
+        }
 
-				if (ex != null)
-				{
-					lines.Add(ex.ToString());
-				}
-				else
-				{
-					lines.Add("(null)");
-				}
-				lines.Add(string.Empty);
+        private static void HandleException(Exception ex)
+        {
+            try
+            {
+                List<string> lines = new List<string>()
+                {
+                    Environment.NewLine
+                };
 
-				File.AppendAllLines(LogFilename, lines);
-			}
-			catch
-			{
-			}
-		}
-	}
+                string exceptionTypeMessage = "";
+                if (ex != null)
+                {
+                    exceptionTypeMessage = $"Unhandled {{ex.GetType().Namespace}}.{{ex.GetType().Name}} Caught!";
+                }
+
+                lines.Add($"[{DateTime.Now.ToShortDateString()} at {DateTime.Now.ToShortTimeString()}] : {exceptionTypeMessage}");
+
+                if (ex != null)
+                {
+                    lines.Add(ex.ToString());
+                }
+                else
+                {
+                    lines.Add("(null)");
+                }
+
+                lines.Add(string.Empty);
+
+                File.AppendAllLines(ExceptionLogPath, lines);
+            }
+            catch
+            {
+            }
+        }
+    }
 }
