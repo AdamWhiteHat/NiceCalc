@@ -9,38 +9,38 @@ using System.Threading.Tasks;
 
 namespace NiceCalc.Execution.Implementation
 {
-	public static class Decimal
-	{
-		public static Func<BigDecimal, BigDecimal> GetUnaryRealFunction(char functionToken)
-		{
-			if (!TokenUnaryRealFunctionDictionary.ContainsKey(functionToken))
-			{
-				throw new ParsingException($"Unrecognized function token '{functionToken}' in dictionary {nameof(TokenUnaryRealFunctionDictionary)}.", functionToken);
-			}
-			return TokenUnaryRealFunctionDictionary[functionToken];
-		}
+    public static class Decimal
+    {
+        public static Func<BigDecimal, BigDecimal> GetUnaryRealFunction(char functionToken)
+        {
+            if (!TokenUnaryRealFunctionDictionary.ContainsKey(functionToken))
+            {
+                throw new ParsingException($"Unrecognized function token '{functionToken}' in dictionary {nameof(TokenUnaryRealFunctionDictionary)}.", functionToken);
+            }
+            return TokenUnaryRealFunctionDictionary[functionToken];
+        }
 
-		public static Func<BigInteger, BigInteger, BigDecimal> GetBinaryRealFunction(char functionToken)
-		{
-			if (!TokenBinaryRealFunctionDictionary.ContainsKey(functionToken))
-			{
-				throw new ParsingException($"Unrecognized function token '{functionToken}' in dictionary {nameof(TokenBinaryRealFunctionDictionary)}.", functionToken);
-			}
-			return TokenBinaryRealFunctionDictionary[functionToken];
-		}
+        public static Func<BigDecimal, BigDecimal, BigDecimal> GetBinaryRealFunction(char functionToken)
+        {
+            if (!TokenBinaryRealFunctionDictionary.ContainsKey(functionToken))
+            {
+                throw new ParsingException($"Unrecognized function token '{functionToken}' in dictionary {nameof(TokenBinaryRealFunctionDictionary)}.", functionToken);
+            }
+            return TokenBinaryRealFunctionDictionary[functionToken];
+        }
 
-		public static Func<BigDecimal, BigDecimal, BigDecimal> GetBinaryOperation(char operationToken)
-		{
-			if (!TokenBinaryOperationDictionary.ContainsKey(operationToken))
-			{
-				throw new ParsingException($"Unrecognized operation token '{operationToken}' in dictionary {nameof(TokenBinaryOperationDictionary)}.", operationToken);
-			}
-			return TokenBinaryOperationDictionary[operationToken];
-		}
+        public static Func<BigDecimal, BigDecimal, BigDecimal> GetBinaryRealOperation(char operationToken)
+        {
+            if (!TokenBinaryRealOperationDictionary.ContainsKey(operationToken))
+            {
+                throw new ParsingException($"Unrecognized operation token '{operationToken}' in dictionary {nameof(TokenBinaryRealOperationDictionary)}.", operationToken);
+            }
+            return TokenBinaryRealOperationDictionary[operationToken];
+        }
 
-		private static readonly Dictionary<char, Func<BigDecimal, BigDecimal>> TokenUnaryRealFunctionDictionary = new Dictionary<char, Func<BigDecimal, BigDecimal>>()
-		{
-			{ '⎷', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.SquareRoot(i, BigDecimal.Precision)) }, // sqrt
+        private static readonly Dictionary<char, Func<BigDecimal, BigDecimal>> TokenUnaryRealFunctionDictionary = new Dictionary<char, Func<BigDecimal, BigDecimal>>()
+        {
+            { '⎷', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.SquareRoot(i, BigDecimal.Precision)) }, // sqrt
 			{ '|', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Abs(i)) },  // abs	
 			{ '±', new Func<BigDecimal, BigDecimal>((BigDecimal i) => i.Sign) },     // sign
 			{ '-', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Negate(i)) },  // -	
@@ -55,20 +55,20 @@ namespace NiceCalc.Execution.Implementation
 			{ 'τ', new Func<BigDecimal, BigDecimal>((BigDecimal i) => BigDecimal.Tan(i, BigDecimal.Precision)) },    // tan
 		};
 
-		private static readonly Dictionary<char, Func<BigInteger, BigInteger, BigDecimal>> TokenBinaryRealFunctionDictionary = new Dictionary<char, Func<BigInteger, BigInteger, BigDecimal>>()
-		{
-			{ '⌥', new Func<BigInteger, BigInteger, BigDecimal>((BigInteger a, BigInteger b) => BigDecimal.Exp(a) / BigDecimal.Exp(b)) }, // logn
-			{ '⍻', new Func<BigInteger, BigInteger, BigDecimal>((BigInteger a, BigInteger b) => BigDecimal.NthRoot(new BigDecimal(mantissa: b, exponent: 0), (int)a, decimalPlaces: BigDecimal.Precision)) } // nthroot
+        private static readonly Dictionary<char, Func<BigDecimal, BigDecimal, BigDecimal>> TokenBinaryRealFunctionDictionary = new Dictionary<char, Func<BigDecimal, BigDecimal, BigDecimal>>()
+        {
+            { '⌥', new Func<BigDecimal, BigDecimal, BigDecimal>((BigDecimal a, BigDecimal b) => BigDecimal.LogN((int)b, a, BigDecimal.Precision)) }, // logn
+			{ '⍻', new Func<BigDecimal, BigDecimal, BigDecimal>((BigDecimal a, BigDecimal b) => BigDecimal.NthRoot(b, (int)a, BigDecimal.Precision)) } // nthroot
 		};
 
-		private static readonly Dictionary<char, Func<BigDecimal, BigDecimal, BigDecimal>> TokenBinaryOperationDictionary = new Dictionary<char, Func<BigDecimal, BigDecimal, BigDecimal>>()
-		{
-			{'+', BigDecimal.Add },
-			{'-', BigDecimal.Subtract },
-			{'*', BigDecimal.Multiply },
-			{'/', BigDecimal.Divide},
-			{'%', BigDecimal.Mod},
-			{'^', BigDecimalAdapter.Pow }
-		};
-	}
+        private static readonly Dictionary<char, Func<BigDecimal, BigDecimal, BigDecimal>> TokenBinaryRealOperationDictionary = new Dictionary<char, Func<BigDecimal, BigDecimal, BigDecimal>>()
+        {
+            {'+', BigDecimal.Add },
+            {'-', BigDecimal.Subtract },
+            {'*', BigDecimal.Multiply },
+            {'/', BigDecimal.Divide},
+            {'%', BigDecimal.Mod},
+            {'^', BigDecimalAdapter.Pow }
+        };
+    }
 }

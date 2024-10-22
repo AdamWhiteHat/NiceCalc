@@ -283,7 +283,7 @@ namespace NiceCalc.Execution
 
             private static NumberToken Function_UnaryReal(Token token, NumberToken parameter)
             {
-                BigDecimal param1 = parameter.IntegerValue;
+                BigDecimal param1 = parameter.RealValue;
 
                 Func<BigDecimal, BigDecimal> unaryRealFunc = NiceCalc.Execution.Implementation.Decimal.GetUnaryRealFunction(token.Symbol);
 
@@ -294,8 +294,8 @@ namespace NiceCalc.Execution
 
             private static NumberToken Function_BinaryReal(Token token, NumberToken left, NumberToken right)
             {
-                Func<BigInteger, BigInteger, BigDecimal> binaryRealFunc = NiceCalc.Execution.Implementation.Decimal.GetBinaryRealFunction(token.Symbol);
-                BigDecimal result = binaryRealFunc(left.IntegerValue, right.IntegerValue);
+                Func<BigDecimal, BigDecimal, BigDecimal> binaryRealFunc = NiceCalc.Execution.Implementation.Decimal.GetBinaryRealFunction(token.Symbol);
+                BigDecimal result = binaryRealFunc(left.RealValue, right.RealValue);
                 return new NumberToken(result);
             }
 
@@ -304,7 +304,7 @@ namespace NiceCalc.Execution
                 BigDecimal rhs = right.RealValue;
                 BigDecimal lhs = left.RealValue;
 
-                Func<BigDecimal, BigDecimal, BigDecimal> operation = NiceCalc.Execution.Implementation.Decimal.GetBinaryOperation(token.Symbol);
+                Func<BigDecimal, BigDecimal, BigDecimal> operation = NiceCalc.Execution.Implementation.Decimal.GetBinaryRealOperation(token.Symbol);
 
                 BigDecimal result = operation(lhs, rhs);
 
@@ -324,7 +324,7 @@ namespace NiceCalc.Execution
 
                 Fraction param1 = parameter.RationalValue;
 
-                Func<Fraction, Fraction> unaryRealFunc = NiceCalc.Execution.Implementation.Rational.GetUnaryRealFunction(token.Symbol);
+                Func<Fraction, Fraction> unaryRealFunc = NiceCalc.Execution.Implementation.Rational.GetUnaryRationalFunction(token.Symbol);
 
                 Fraction result = unaryRealFunc(param1);
 
@@ -338,7 +338,7 @@ namespace NiceCalc.Execution
                     return Function_BinaryReal(token, left, right);
                 }
 
-                Func<BigInteger, BigInteger, Fraction> binaryRealFunc = NiceCalc.Execution.Implementation.Rational.GetBinaryRealFunction(token.Symbol);
+                Func<BigInteger, BigInteger, Fraction> binaryRealFunc = NiceCalc.Execution.Implementation.Rational.GetBinaryRationalFunction(token.Symbol);
                 Fraction result = binaryRealFunc(left.IntegerValue, right.IntegerValue);
                 return new NumberToken(result);
             }
@@ -348,7 +348,7 @@ namespace NiceCalc.Execution
                 Fraction rhs = right.RationalValue;
                 Fraction lhs = left.RationalValue;
 
-                Func<Fraction, Fraction, Fraction> operation = NiceCalc.Execution.Implementation.Rational.GetBinaryOperation(token.Symbol);
+                Func<Fraction, Fraction, Fraction> operation = NiceCalc.Execution.Implementation.Rational.GetBinaryRationalOperation(token.Symbol);
 
                 Fraction result = operation(lhs, rhs);
 
