@@ -7,11 +7,11 @@ using NiceCalc.Execution;
 
 namespace NiceCalc.Tokenization
 {
-    public class OperatorToken : Token
+    public class OperatorToken : IToken
     {
         public int ParameterCount;
-        public override char Symbol { get { return _symbol; } }
-        public override TokenType TokenType { get { return TokenType.Operation; } }
+        public char Symbol { get { return _symbol; } }
+        public TokenType TokenType { get { return TokenType.Operation; } }
 
         private char _symbol;
 
@@ -19,6 +19,11 @@ namespace NiceCalc.Tokenization
         {
             _symbol = operation;
             ParameterCount = 2;
+        }
+
+        public override string ToString()
+        {
+            return Symbol.ToString();
         }
     }
 }

@@ -9,12 +9,12 @@ using NiceCalc.Interpreter.Language;
 
 namespace NiceCalc.Tokenization
 {
-	public class ControlToken : Token
+	public class ControlToken : IToken
 	{
-		public override char Symbol { get { return _symbol; } }
+		public char Symbol { get { return _symbol; } }
 		private char _symbol;
 
-		public override TokenType TokenType { get { return _tokenType; } }
+		public TokenType TokenType { get { return _tokenType; } }
 		private TokenType _tokenType;
 
 		public ControlToken(char token)
@@ -27,6 +27,11 @@ namespace NiceCalc.Tokenization
 			if (_symbol == ',') { _tokenType = TokenType.ArgumentDelimiter; }
 			else if (_symbol == '(') { _tokenType = TokenType.OpenParentheses; }
 			else if (_symbol == ')') { _tokenType = TokenType.CloseParentheses; }
-		}
+        }
+
+        public override string ToString()
+        {
+            return Symbol.ToString();
+        }
 	}
 }

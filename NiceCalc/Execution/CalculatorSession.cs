@@ -144,7 +144,7 @@ namespace NiceCalc.Execution
 
                 if (Syntax.IsNumeric(expr))
                 {
-                    return new NumberToken(expression); // No-op. Expression is just a number (likely to be assigned to variable).
+                    return NumberToken.Factory.Parse(expression); // No-op. Expression is just a number (likely to be assigned to variable).
                 }
 
                 if (Variables.ContainsKey(expression))
@@ -154,7 +154,7 @@ namespace NiceCalc.Execution
             }
 
 
-            List<Token> tokens = Tokenizer.Tokenize(expression);
+            List<IToken> tokens = Tokenizer.Tokenize(expression);
 
             int index = tokens.FindIndex(tok => tok.TokenType == TokenType.Variable);
             while (index != -1)

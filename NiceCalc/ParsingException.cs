@@ -77,7 +77,7 @@ namespace NiceCalc
 			: this(message, stringToken, stringStack.ToList(), sourceMemberName, sourceFilePath, sourceLineNumber)
 		{ }
 
-		public ParsingException(string message, Token token, Stack<Token> stack,
+		public ParsingException(string message, IToken token, Stack<IToken> stack,
 							[CallerMemberName] string sourceMemberName = "",
 							[CallerFilePath] string sourceFilePath = "",
 							[CallerLineNumber] int sourceLineNumber = 0)

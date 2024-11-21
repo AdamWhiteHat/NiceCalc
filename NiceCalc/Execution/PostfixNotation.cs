@@ -23,7 +23,7 @@ namespace NiceCalc.Execution
     {
         private static readonly string AllowedCharacters = Syntax.Numbers + Syntax.Operators + Syntax.Functions + " /";
 
-        public static NumberToken Evaluate(Queue<Token> postfixTokenQueue, NumericType numericType)
+        public static NumberToken Evaluate(Queue<IToken> postfixTokenQueue, NumericType numericType)
         {
             if (postfixTokenQueue == null || postfixTokenQueue.Count < 1)
             {
@@ -41,19 +41,19 @@ namespace NiceCalc.Execution
         private class Evaluation
         {
             private NumericType NumericType;
-            private Stack<Token> Stack;
-            private Queue<Token> InputQueue;
+            private Stack<IToken> Stack;
+            private Queue<IToken> InputQueue;
 
-            public Evaluation(Queue<Token> inputQueue, NumericType numericType)
+            public Evaluation(Queue<IToken> inputQueue, NumericType numericType)
             {
                 InputQueue = inputQueue;
                 NumericType = numericType;
-                Stack = new Stack<Token>();
+                Stack = new Stack<IToken>();
             }
 
             public NumberToken Eval()
             {
-                Token token;
+                IToken token;
 
                 while (InputQueue.Any())
                 {
@@ -91,8 +91,8 @@ namespace NiceCalc.Execution
                             {
                                 int quantity = Stack.Count - 2;
 
-                                Queue<Token> newQueue
-                                    = new Queue<Token>(
+                                Queue<IToken> newQueue
+                                    = new Queue<IToken>(
                                        Enumerable.Repeat(token, quantity)
                                        .Concat(InputQueue)
                                     );
@@ -123,13 +123,14 @@ namespace NiceCalc.Execution
 
                 if (Stack.Count == 1)
                 {
-                    Token lastToken = Stack.Pop();
-                    NumberToken result = lastToken as NumberToken;
-                    if (result == null)
+                    IToken lastToken = Stack.Pop();
+                    if (lastToken is NumberToken)
                     {
-                        throw new ParsingException($"The last token on the stack was not of type {nameof(NumberToken)}.", token: lastToken, stack: Stack);
+                        NumberToken result = (NumberToken)lastToken;
+                        return result;
                     }
-                    return result;
+                    throw new ParsingException($"The last token on the stack was not of type {nameof(NumberToken)}.", token: lastToken, stack: Stack);
+
                 }
                 else
                 {
@@ -142,7 +143,7 @@ namespace NiceCalc.Execution
 
 
 
-            private void ProcessFunction(int paramCount, Token tokenChar)
+            private void ProcessFunction(int paramCount, IToken tokenChar)
             {
                 if (Stack.Count < paramCount)
                 {
@@ -168,7 +169,13 @@ namespace NiceCalc.Execution
                 }
                 else if (paramCount == 1)
                 {
-                    NumberToken param1 = Stack.Pop() as NumberToken;
+                    IToken poppedToken = Stack.Pop();
+                    if (!(poppedToken is NumberToken))
+                    {
+                        throw new ParsingException($"The last token on the stack was not of type {nameof(NumberToken)}.", token: poppedToken, stack: Stack);
+                    }
+
+                    NumberToken param1 = (NumberToken)poppedToken;
 
                     if (isIntegerFunction)
                     {
@@ -186,7 +193,7 @@ namespace NiceCalc.Execution
                     }
                     else
                     {
-                        Token resultString;
+                        IToken resultString;
 
                         if (NumericType == NumericType.Real)
                         {
@@ -202,8 +209,20 @@ namespace NiceCalc.Execution
                 }
                 else if (paramCount == 2)
                 {
-                    NumberToken param1 = Stack.Pop() as NumberToken;
-                    NumberToken param2 = Stack.Pop() as NumberToken;
+                    IToken poppedToken1 = Stack.Pop();
+                    if (!(poppedToken1 is NumberToken))
+                    {
+                        throw new ParsingException($"The last token on the stack was not of type {nameof(NumberToken)}.", token: poppedToken1, stack: Stack);
+                    }
+
+                    IToken poppedToken2 = Stack.Pop();
+                    if (!(poppedToken2 is NumberToken))
+                    {
+                        throw new ParsingException($"The last token on the stack was not of type {nameof(NumberToken)}.", token: poppedToken2, stack: Stack);
+                    }
+
+                    NumberToken param1 = (NumberToken)poppedToken1;
+                    NumberToken param2 = (NumberToken)poppedToken2;
 
                     if (isIntegerFunction)
                     {
@@ -214,7 +233,7 @@ namespace NiceCalc.Execution
                     }
                     else
                     {
-                        Token resultString;
+                        IToken resultString;
                         if (NumericType == NumericType.Real)
                         {
                             resultString = Function_BinaryReal(tokenChar, param1, param2);
@@ -234,16 +253,21 @@ namespace NiceCalc.Execution
             }
 
 
-            private void ProcessOperation(Token tokenChar)
+            private void ProcessOperation(IToken tokenChar)
             {
                 if (Stack.Count < 2)
                 {
                     if (tokenChar.Symbol == Syntax.UnaryNegation)
                     {
-                        Token temp = Stack.Pop();
-                        NumberToken val = temp as NumberToken;
+                        IToken temp = Stack.Pop();
+                        if (!(temp is NumberToken))
+                        {
+                            throw new ParsingException($"The last token on the stack was not of type {nameof(NumberToken)}.", token: temp, stack: Stack);
+                        }
 
-                        Token resultVal;
+                        NumberToken val = (NumberToken)temp;
+
+                        IToken resultVal;
                         if (val.PreferredNumericType == NumericType.Rational)
                         {
                             resultVal = Function_UnaryFraction(tokenChar, val);
@@ -260,13 +284,21 @@ namespace NiceCalc.Execution
                     throw new ParsingException("The algebraic string has not sufficient values in the expression for the number of operators.", token: tokenChar, stack: Stack);
                 }
 
-                Token rightToken = Stack.Pop();
-                Token leftToken = Stack.Pop();
+                IToken rightToken = Stack.Pop();
+                if (!(rightToken is NumberToken))
+                {
+                    throw new ParsingException($"The last token on the stack was not of type {nameof(NumberToken)}.", token: rightToken, stack: Stack);
+                }
+                IToken leftToken = Stack.Pop();
+                if (!(leftToken is NumberToken))
+                {
+                    throw new ParsingException($"The last token on the stack was not of type {nameof(NumberToken)}.", token: leftToken, stack: Stack);
+                }
 
-                NumberToken right = rightToken as NumberToken;
-                NumberToken left = leftToken as NumberToken;
+                NumberToken right = (NumberToken)rightToken;
+                NumberToken left = (NumberToken)leftToken;
 
-                Token resultString;
+                IToken resultString;
                 if (right.PreferredNumericType == NumericType.Rational && left.PreferredNumericType == NumericType.Rational)
                 {
                     resultString = Operation_BinaryFraction(tokenChar, left, right);
@@ -281,7 +313,7 @@ namespace NiceCalc.Execution
 
             #region Real
 
-            private static NumberToken Function_UnaryReal(Token token, NumberToken parameter)
+            private static NumberToken Function_UnaryReal(IToken token, NumberToken parameter)
             {
                 BigDecimal param1 = parameter.RealValue;
 
@@ -292,14 +324,14 @@ namespace NiceCalc.Execution
                 return new NumberToken(result);
             }
 
-            private static NumberToken Function_BinaryReal(Token token, NumberToken left, NumberToken right)
+            private static NumberToken Function_BinaryReal(IToken token, NumberToken left, NumberToken right)
             {
                 Func<BigDecimal, BigDecimal, BigDecimal> binaryRealFunc = NiceCalc.Execution.Implementation.Decimal.GetBinaryRealFunction(token.Symbol);
                 BigDecimal result = binaryRealFunc(left.RealValue, right.RealValue);
                 return new NumberToken(result);
             }
 
-            private static NumberToken Operation_BinaryReal(Token token, NumberToken left, NumberToken right)
+            private static NumberToken Operation_BinaryReal(IToken token, NumberToken left, NumberToken right)
             {
                 BigDecimal rhs = right.RealValue;
                 BigDecimal lhs = left.RealValue;
@@ -315,7 +347,7 @@ namespace NiceCalc.Execution
 
             #region Rational
 
-            private static NumberToken Function_UnaryFraction(Token token, NumberToken parameter)
+            private static NumberToken Function_UnaryFraction(IToken token, NumberToken parameter)
             {
                 if (!NiceCalc.Execution.Implementation.Rational.IsFunctionTokenSupported(token.Symbol))
                 {
@@ -331,7 +363,7 @@ namespace NiceCalc.Execution
                 return new NumberToken(result);
             }
 
-            private static NumberToken Function_BinaryFraction(Token token, NumberToken left, NumberToken right)
+            private static NumberToken Function_BinaryFraction(IToken token, NumberToken left, NumberToken right)
             {
                 if (!NiceCalc.Execution.Implementation.Rational.IsFunctionTokenSupported(token.Symbol))
                 {
@@ -343,7 +375,7 @@ namespace NiceCalc.Execution
                 return new NumberToken(result);
             }
 
-            private static NumberToken Operation_BinaryFraction(Token token, NumberToken left, NumberToken right)
+            private static NumberToken Operation_BinaryFraction(IToken token, NumberToken left, NumberToken right)
             {
                 Fraction rhs = right.RationalValue;
                 Fraction lhs = left.RationalValue;

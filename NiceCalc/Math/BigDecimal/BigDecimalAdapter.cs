@@ -14,14 +14,33 @@ namespace NiceCalc.Math
     {
         public static BigDecimal Pow(BigDecimal @base, BigDecimal exponent)
         {
-            if (!exponent.GetFractionalPart().IsZero())
+            int precision = BigDecimal.Precision;
+            BigDecimal.Precision = precision + 10;
+            try
             {
-                throw new ArgumentException("The Pow operation does not support exponents that are not positive whole numbers.");
+                if (!exponent.GetFractionalPart().IsZero())
+                {
+                    return BigDecimal.Pow(@base, exponent, precision);
+                    //throw new ArgumentException("The Pow operation does not support exponents that are not positive whole numbers.");
+                }
+                else
+                {
+                    if (@base.GetFractionalPart().IsZero())
+                    {
+                        return new BigDecimal(BigIntegerMaths.Pow(@base.WholeValue, exponent.WholeValue));
+                    }
+                    else
+                    {
+                        return BigDecimal.Pow(@base, exponent.WholeValue, precision);
+                    }
+                }
             }
-
-            return BigDecimal.Pow(@base, exponent, BigDecimal.Precision);
+            finally
+            {
+                BigDecimal.Precision = precision;
+            }
         }
-     
+
         /// <summary>
         /// Factorial function: n! = 1 * 2 * ... * n-1 * n
         /// Only supports integer arguments

@@ -20,7 +20,7 @@ namespace NiceCalc.Interpreter
 	{
 		private static readonly string[] AllowedTokens = (Syntax.Numbers + Syntax.Operators + Syntax.Functions + "(,)/").ToCharArray().Select(c => c.ToString()).ToArray();
 
-		private static void AddToOutput(Queue<Token> output, Token value)
+		private static void AddToOutput(Queue<IToken> output, IToken value)
 		{
 			output.Enqueue(value);
 		}
@@ -64,18 +64,18 @@ namespace NiceCalc.Interpreter
 			return result;
 		}
 
-		public static Queue<Token> Convert(List<Token> tokens)
+		public static Queue<IToken> Convert(List<IToken> tokens)
 		{
 			if (!tokens.Any())
 			{
-				return new Queue<Token>(); // No-op
+				return new Queue<IToken>(); // No-op
 			}
 
-			Queue<Token> output = new Queue<Token>();
-			Stack<Token> operatorStack = new Stack<Token>();
-			Queue<Token> inputQueue = new Queue<Token>(tokens);
+			Queue<IToken> output = new Queue<IToken>();
+			Stack<IToken> operatorStack = new Stack<IToken>();
+			Queue<IToken> inputQueue = new Queue<IToken>(tokens);
 
-			Token current = null;
+			IToken current = null;
 			while (inputQueue.Any())
 			{
 				current = inputQueue.Dequeue();
@@ -92,7 +92,7 @@ namespace NiceCalc.Interpreter
 				{
 					if (operatorStack.Count > 0)
 					{
-						Token op = operatorStack.Peek();
+						IToken op = operatorStack.Peek();
 
 						while (
 							op.TokenType != TokenType.OpenParentheses
@@ -121,7 +121,7 @@ namespace NiceCalc.Interpreter
 				{
 					if (operatorStack.Count > 0)
 					{
-						Token op = operatorStack.Peek();
+						IToken op = operatorStack.Peek();
 
 						while (op.TokenType != TokenType.OpenParentheses)
 						{
@@ -143,7 +143,7 @@ namespace NiceCalc.Interpreter
 					bool leftParenthesisFound = false;
 					while (operatorStack.Count > 0)
 					{
-						Token op = operatorStack.Pop();
+						IToken op = operatorStack.Pop();
 						if (op.TokenType == TokenType.OpenParentheses)
 						{
 							leftParenthesisFound = true;
@@ -174,7 +174,7 @@ namespace NiceCalc.Interpreter
 			//
 			while (operatorStack.Count > 0)
 			{
-				Token op = operatorStack.Pop();
+				IToken op = operatorStack.Pop();
 				if (op.TokenType == TokenType.OpenParentheses)
 				{
 					throw new ParsingException("The expression contains an extraneous left parenthesis.", token: op, stack: operatorStack);

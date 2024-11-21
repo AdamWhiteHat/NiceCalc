@@ -8,11 +8,11 @@ using NiceCalc.Interpreter.Language;
 
 namespace NiceCalc.Tokenization
 {
-    public class FunctionToken : Token
+    public class FunctionToken : IToken
     {
         public int ParameterCount;
-        public override char Symbol { get { return _symbol; } }
-        public override TokenType TokenType { get { return TokenType.Function; } }
+        public char Symbol { get { return _symbol; } }
+        public TokenType TokenType { get { return TokenType.Function; } }
 
         private char _symbol;
 
@@ -24,6 +24,11 @@ namespace NiceCalc.Tokenization
             }
             _symbol = symbol;
             ParameterCount = Functions.GetParameterCount(_symbol);
+        }
+
+        public override string ToString()
+        {
+            return Symbol.ToString();
         }
     }
 }

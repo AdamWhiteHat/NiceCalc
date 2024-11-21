@@ -248,6 +248,8 @@ namespace NiceCalc
 
             numericPrecision.Value = currentSettings.Precision;
             BigDecimal.Precision = currentSettings.Precision;
+            BigDecimal.AlwaysNormalize = true;
+            BigDecimal.AlwaysTruncate = true;
 
             int splitterDistance = splitContainer_LeftRight.Size.Width - splitContainer_LeftRight.SplitterWidth - CurrentSettings.RightPanelWidth;
             splitContainer_LeftRight.SplitterDistance = splitterDistance;

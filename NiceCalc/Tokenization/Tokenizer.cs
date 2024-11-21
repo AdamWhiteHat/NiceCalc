@@ -13,19 +13,19 @@ namespace NiceCalc.Tokenization
     {
         private static readonly string NonIdentifierTokens = Syntax.Operators + "() ";
 
-        public static List<Token> Tokenize(string expression)
+        public static List<IToken> Tokenize(string expression)
         {
             List<string> rawTokens = StringTokenize(expression);
             List<string> tokens = TokenizeFunctionNames(rawTokens);
 
-            List<Token> result = new List<Token>();
+            List<IToken> result = new List<IToken>();
             foreach (string str in tokens)
             {
                 char tok = str[0];
 
                 if (Syntax.IsNumeric(str))
                 {
-                    result.Add(new NumberToken(str));
+                    result.Add(NumberToken.Factory.Parse(str));
                 }
                 else if (str.Length == 1 && Syntax.ControlTokens.Contains(tok))
                 {
