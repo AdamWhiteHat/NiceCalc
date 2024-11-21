@@ -44,7 +44,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="ExtendedNumerics.BigDecimal" Version="3000.0.0.280" />
+		<PackageReference Include="ExtendedNumerics.BigDecimal" Version="3000.0.1.312" />
 		<PackageReference Include="ExtendedNumerics.BigRational" Version="2023.1000.2.328" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	</ItemGroup>

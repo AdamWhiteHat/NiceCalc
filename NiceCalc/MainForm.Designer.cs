@@ -34,6 +34,7 @@ namespace NiceCalc
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.splitContainer_TopBottom = new System.Windows.Forms.SplitContainer();
+            this.tbInput = new NiceCalc.AutoCompleteTextBox();
             this.tbOutput = new System.Windows.Forms.RichTextBox();
             this.cbCopyInputToOutput = new System.Windows.Forms.CheckBox();
             this.splitContainer_LeftRight = new System.Windows.Forms.SplitContainer();
@@ -76,7 +77,6 @@ namespace NiceCalc
             this.listBoxVariables = new System.Windows.Forms.ListBox();
             this.cbExpandPanel = new System.Windows.Forms.CheckBox();
             this.imageList1 = new System.Windows.Forms.ImageList(this.components);
-            this.tbInput = new NiceCalc.AutoCompleteTextBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer_TopBottom)).BeginInit();
             this.splitContainer_TopBottom.Panel1.SuspendLayout();
             this.splitContainer_TopBottom.Panel2.SuspendLayout();
@@ -121,10 +121,48 @@ namespace NiceCalc
             this.splitContainer_TopBottom.Panel2.Cursor = System.Windows.Forms.Cursors.Default;
             this.splitContainer_TopBottom.Panel2.Padding = new System.Windows.Forms.Padding(4);
             this.splitContainer_TopBottom.Panel2MinSize = 150;
-            this.splitContainer_TopBottom.Size = new System.Drawing.Size(755, 538);
+            this.splitContainer_TopBottom.Size = new System.Drawing.Size(749, 538);
             this.splitContainer_TopBottom.SplitterDistance = 296;
             this.splitContainer_TopBottom.SplitterWidth = 10;
             this.splitContainer_TopBottom.TabIndex = 3;
+            // 
+            // tbInput
+            // 
+            this.tbInput.AcceptsTab = true;
+            this.tbInput.AutoCompleteCustomSource = new string[] {
+        "#",
+        "abs",
+        "ceil",
+        "cos",
+        "divisors",
+        "factor",
+        "factorial",
+        "floor",
+        "gcd",
+        "isprime",
+        "lcm",
+        "ln",
+        "logn",
+        "nextprime",
+        "nthroot",
+        "pi",
+        "previousprime",
+        "round",
+        "sign",
+        "sin",
+        "sqrt",
+        "tan",
+        "trunc"};
+            this.tbInput.Cursor = System.Windows.Forms.Cursors.Default;
+            this.tbInput.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tbInput.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbInput.Location = new System.Drawing.Point(4, 4);
+            this.tbInput.Margin = new System.Windows.Forms.Padding(4);
+            this.tbInput.Name = "tbInput";
+            this.tbInput.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
+            this.tbInput.Size = new System.Drawing.Size(741, 288);
+            this.tbInput.TabIndex = 25;
+            this.tbInput.Text = "";
             // 
             // tbOutput
             // 
@@ -135,7 +173,7 @@ namespace NiceCalc
             this.tbOutput.Margin = new System.Windows.Forms.Padding(4);
             this.tbOutput.Name = "tbOutput";
             this.tbOutput.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this.tbOutput.Size = new System.Drawing.Size(747, 224);
+            this.tbOutput.Size = new System.Drawing.Size(741, 224);
             this.tbOutput.TabIndex = 26;
             this.tbOutput.Text = "";
             // 
@@ -176,7 +214,7 @@ namespace NiceCalc
             this.splitContainer_LeftRight.Panel2.Cursor = System.Windows.Forms.Cursors.Default;
             this.splitContainer_LeftRight.Panel2MinSize = 225;
             this.splitContainer_LeftRight.Size = new System.Drawing.Size(1003, 538);
-            this.splitContainer_LeftRight.SplitterDistance = 755;
+            this.splitContainer_LeftRight.SplitterDistance = 749;
             this.splitContainer_LeftRight.SplitterWidth = 10;
             this.splitContainer_LeftRight.TabIndex = 2;
             // 
@@ -201,7 +239,7 @@ namespace NiceCalc
             this.flowLayoutPanel_RightToolbar.MinimumSize = new System.Drawing.Size(225, 2);
             this.flowLayoutPanel_RightToolbar.Name = "flowLayoutPanel_RightToolbar";
             this.flowLayoutPanel_RightToolbar.Padding = new System.Windows.Forms.Padding(1);
-            this.flowLayoutPanel_RightToolbar.Size = new System.Drawing.Size(238, 538);
+            this.flowLayoutPanel_RightToolbar.Size = new System.Drawing.Size(244, 538);
             this.flowLayoutPanel_RightToolbar.TabIndex = 1;
             // 
             // flowLayoutPanel_Precision
@@ -463,6 +501,7 @@ namespace NiceCalc
             this.btnPow.TabIndex = 14;
             this.btnPow.Text = "pow";
             this.btnPow.UseVisualStyleBackColor = true;
+            this.btnPow.Visible = false;
             this.btnPow.Click += new System.EventHandler(this.BtnFunctionParameterize_Click);
             // 
             // btnLogn
@@ -731,44 +770,6 @@ namespace NiceCalc
             this.imageList1.TransparentColor = System.Drawing.Color.Transparent;
             this.imageList1.Images.SetKeyName(0, "ExpandRightArrow");
             this.imageList1.Images.SetKeyName(1, "ExpandDownArrow");
-            // 
-            // tbInput
-            // 
-            this.tbInput.AcceptsTab = true;
-            this.tbInput.AutoCompleteCustomSource = new string[] {
-        "#",
-        "abs",
-        "ceil",
-        "cos",
-        "divisors",
-        "factor",
-        "factorial",
-        "floor",
-        "gcd",
-        "isprime",
-        "lcm",
-        "ln",
-        "logn",
-        "nextprime",
-        "nthroot",
-        "pi",
-        "previousprime",
-        "round",
-        "sign",
-        "sin",
-        "sqrt",
-        "tan",
-        "trunc"};
-            this.tbInput.Cursor = System.Windows.Forms.Cursors.Default;
-            this.tbInput.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tbInput.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tbInput.Location = new System.Drawing.Point(4, 4);
-            this.tbInput.Margin = new System.Windows.Forms.Padding(4);
-            this.tbInput.Name = "tbInput";
-            this.tbInput.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this.tbInput.Size = new System.Drawing.Size(747, 288);
-            this.tbInput.TabIndex = 25;
-            this.tbInput.Text = "";
             // 
             // MainForm
             // 

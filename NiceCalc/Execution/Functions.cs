@@ -72,6 +72,7 @@ namespace NiceCalc.Execution
 
 		public static readonly Dictionary<string, string> FunctionTokenDictionary = new Dictionary<string, string>()
 		{
+			{ "pow", "^" },
 			{ "sqrt", "⎷" },
 			{ "abs", "|" },
 			{ "ln", "Ə" },

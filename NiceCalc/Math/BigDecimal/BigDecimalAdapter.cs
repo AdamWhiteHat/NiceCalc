@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using ExtendedNumerics;
+using ExtendedNumerics.Helpers;
 
 namespace NiceCalc.Math
 {
@@ -17,10 +19,9 @@ namespace NiceCalc.Math
                 throw new ArgumentException("The Pow operation does not support exponents that are not positive whole numbers.");
             }
 
-            BigInteger exp = exponent.WholeValue;
-            return BigDecimal.Pow(@base, exp, BigDecimal.Precision);
+            return BigDecimal.Pow(@base, exponent, BigDecimal.Precision);
         }
-
+     
         /// <summary>
         /// Factorial function: n! = 1 * 2 * ... * n-1 * n
         /// Only supports integer arguments
