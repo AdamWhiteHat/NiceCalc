@@ -122,6 +122,8 @@ namespace NiceCalc.Tokenization
                     {
                         throw new ParsingException($"Encountered a delimiter (','), but both the number buffer and the identifier buffer were empty. Was expecting a number or an identifier before the delimiter (',') character.", c, tokens);
                     }
+
+                    tokens.Add(c.ToString());
                 }
                 else
                 {

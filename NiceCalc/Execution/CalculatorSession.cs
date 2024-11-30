@@ -150,6 +150,7 @@ namespace NiceCalc.Execution
             List<IToken> tokens = Tokenizer.Tokenize(expression);
 
             // Replace Variable tokens with their stored value
+            bool unevaluatable = false;
             int index = tokens.FindIndex(tok => tok.TokenType == TokenType.Variable);
             while (index != -1)
             {
@@ -163,11 +164,17 @@ namespace NiceCalc.Execution
                     }
                     else
                     {
+                        unevaluatable = true;
                         throw new ParsingException($"Variable '{vTok.Name}' undefined.", stringToken: vTok.Name);
                     }
                 }
 
                 index = tokens.FindIndex(index + 1, tok => tok.TokenType == TokenType.Variable);
+            }
+
+            if(unevaluatable)
+            {        
+                
             }
 
             NumberToken results = InfixNotation.Evaluate(tokens, PreferredOutputFormat);
