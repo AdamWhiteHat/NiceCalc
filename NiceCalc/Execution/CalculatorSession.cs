@@ -136,13 +136,7 @@ namespace NiceCalc.Execution
         {
             if (!string.IsNullOrWhiteSpace(expression))
             {
-                string expr = expression;
-                if (expression[0] == '-')
-                {
-                    expr = new string(expression.Skip(1).ToArray());
-                }
-
-                if (Syntax.IsNumeric(expr))
+                if (Syntax.IsNumeric(expression))
                 {
                     return NumberToken.Factory.Parse(expression); // No-op. Expression is just a number (likely to be assigned to variable).
                 }
@@ -153,9 +147,9 @@ namespace NiceCalc.Execution
                 }
             }
 
-
             List<IToken> tokens = Tokenizer.Tokenize(expression);
 
+            // Replace Variable tokens with their stored value
             int index = tokens.FindIndex(tok => tok.TokenType == TokenType.Variable);
             while (index != -1)
             {
@@ -167,11 +161,14 @@ namespace NiceCalc.Execution
                         NumberToken fromVariable = Variables[vTok.Name];
                         tokens[index] = fromVariable;
                     }
+                    else
+                    {
+                        throw new ParsingException($"Variable '{vTok.Name}' undefined.", stringToken: vTok.Name);
+                    }
                 }
 
-                index = tokens.FindIndex(index, tok => tok.TokenType == TokenType.Variable);
+                index = tokens.FindIndex(index + 1, tok => tok.TokenType == TokenType.Variable);
             }
-
 
             NumberToken results = InfixNotation.Evaluate(tokens, PreferredOutputFormat);
             results = new NumberToken(BigDecimal.Round(results.RealValue, BigDecimal.Precision));

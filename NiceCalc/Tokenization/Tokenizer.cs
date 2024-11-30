@@ -15,6 +15,7 @@ namespace NiceCalc.Tokenization
 
         public static List<IToken> Tokenize(string expression)
         {
+            
             List<string> rawTokens = StringTokenize(expression);
             List<string> tokens = TokenizeFunctionNames(rawTokens);
 
@@ -94,6 +95,32 @@ namespace NiceCalc.Tokenization
                     else
                     {
                         number.Add(c);
+                    }
+                }
+                else if (c == ',')
+                {
+                    int stackPushed = 0;
+
+                    if (number.Any())
+                    {
+                        tokens.Add(new string(number.ToArray()));
+                        number.Clear();
+                        stackPushed++;
+                    }
+                    if (identifier.Any())
+                    {
+                        tokens.Add(new string(identifier.ToArray()));
+                        identifier.Clear();
+                        stackPushed++;
+                    }                  
+
+                    if (stackPushed > 1)
+                    {
+                        throw new ParsingException($"Encountered a delimiter (','), but both the number buffer and the identifier buffer were non-empty. This shouldn't be possible.", c, tokens);
+                    }
+                    else if (stackPushed == 0)
+                    {
+                        throw new ParsingException($"Encountered a delimiter (','), but both the number buffer and the identifier buffer were empty. Was expecting a number or an identifier before the delimiter (',') character.", c, tokens);
                     }
                 }
                 else

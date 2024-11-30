@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -98,12 +99,13 @@ namespace NiceCalc.Interpreter.Language
 
         /// <summary>
         /// Tests if a string consists of only digit (numeric) characters.
-        /// Decimal place characters are allowed, as they are part of the number.
+        /// The decimal separator character is allowed, as they are part of the number.
+        /// The negation character, '-', is allowed, but only at the start of the string.
         /// A string that is null or empty fails this test (returns false).
         /// </summary>		
         public static bool IsNumeric(string text)
         {
-            return !string.IsNullOrWhiteSpace(text) && text.All(c => Numbers.Contains(c));
+            return !string.IsNullOrWhiteSpace(text) && text.TrimStart(new char[] { '-' }).All(c => Numbers.Contains(c));
         }
 
         /// <summary>

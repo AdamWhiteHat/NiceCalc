@@ -133,7 +133,7 @@ namespace NiceCalc
                         try
                         {
 
-                            string toEval = expression.Replace(",", "").Replace(" ", "").Replace("\t", "");
+                            string toEval = expression.Replace(" ", "").Replace("\t", "");
 
                             NumberToken resultToken = CalculatorSession.Eval(toEval);
 
