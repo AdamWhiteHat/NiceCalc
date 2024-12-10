@@ -15,7 +15,7 @@ namespace NiceCalc.Tokenization
 
         public static List<IToken> Tokenize(string expression)
         {
-            
+
             List<string> rawTokens = StringTokenize(expression);
             List<string> tokens = TokenizeFunctionNames(rawTokens);
 
@@ -24,13 +24,13 @@ namespace NiceCalc.Tokenization
             {
                 char tok = str[0];
 
-                if (Syntax.IsNumeric(str))
-                {
-                    result.Add(NumberToken.Factory.Parse(str));
-                }
-                else if (str.Length == 1 && Syntax.ControlTokens.Contains(tok))
+                if (str.Length == 1 && Syntax.ControlTokens.Contains(tok))
                 {
                     result.Add(new ControlToken(tok));
+                }
+                else if (str.Length == 1 && Syntax.Operators.Contains(tok))
+                {
+                    result.Add(new OperatorToken(tok));
                 }
                 else if (str.Length == 1 && tok == Syntax.Pi)
                 {
@@ -44,9 +44,9 @@ namespace NiceCalc.Tokenization
                 {
                     result.Add(new FunctionToken(tok));
                 }
-                else if (str.Length == 1 && Syntax.Operators.Contains(tok))
+                else if (Syntax.IsNumeric(str))
                 {
-                    result.Add(new OperatorToken(tok));
+                    result.Add(NumberToken.Factory.Parse(str));
                 }
                 else if (Syntax.IsAlpha(str))// Must be identifier (variable name)
                 {
@@ -112,7 +112,7 @@ namespace NiceCalc.Tokenization
                         tokens.Add(new string(identifier.ToArray()));
                         identifier.Clear();
                         stackPushed++;
-                    }                  
+                    }
 
                     if (stackPushed > 1)
                     {
