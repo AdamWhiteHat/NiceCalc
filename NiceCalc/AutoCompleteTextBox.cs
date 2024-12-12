@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using System.Windows.Forms;
+using System.ComponentModel;
+using System.Data;
 
 namespace NiceCalc
 {
@@ -29,6 +31,8 @@ namespace NiceCalc
         private bool _isAdded;
         private ListBox _listBox;
         private string typedThusFar = string.Empty;
+       
+
         private static readonly char[] Delimiters = new char[] { ' ', '\r', '\n', '\t', '(', ')' };
 
         public AutoCompleteTextBox()
@@ -40,17 +44,55 @@ namespace NiceCalc
         }
 
         private void InitializeComponent()
-        {
-            _listBox = new ListBox();
-            _listBox.Visible = false;
-            _listBox.MouseClick += listBox_Click;
-
-            ScrollBars = RichTextBoxScrollBars.Vertical;
+        {           
+            this.SuspendLayout();
+            this._listBox = new ListBox();
+            // 
+            // _listBox
+            // 
+            this._listBox.Location = new System.Drawing.Point(0, 0);
+            this._listBox.Name = "_listBox";
+            this._listBox.Size = new System.Drawing.Size(120, 96);
+            this._listBox.TabIndex = 0;
+            this._listBox.Visible = false;
+            this._listBox.MouseClick += listBox_Click;
+            // 
+            // AutoCompleteTextBox
+            // 
+            this.ScrollBars = RichTextBoxScrollBars.Vertical;
+            this.ResumeLayout(false);
 
             _isAdded = false;
 
             KeyDown += this_KeyDown;
-            MouseClick += AutoCompleteTextBox_MouseClick;
+            MouseClick += AutoCompleteTextBox_MouseClick;          
+        }
+
+        public new void Clear()
+        {
+            base.Clear();
+            Raise_ClearOutput();
+        }
+
+        public new void SelectAll()
+        {
+            base.SelectAll();
+        }
+
+        public new void Undo()
+        {
+            if (CanUndo)
+            {
+                base.Undo();
+            }
+        }
+
+        public new void Redo()
+        {
+            if (CanRedo)
+            {
+                base.Redo();
+            }
         }
 
         protected void Raise_ExecuteExpression()
@@ -78,7 +120,6 @@ namespace NiceCalc
                     else
                     {
                         Clear();
-                        Raise_ClearOutput();
                         isHandled = true;
                     }
                     break;
@@ -138,10 +179,7 @@ namespace NiceCalc
                 case Keys.Z:
                     if (e.Control && !IsSuggestionBoxVisible)
                     {
-                        if (CanUndo)
-                        {
-                            Undo();
-                        }
+                        Undo();
                         isHandled = true;
                     }
                     break;
@@ -149,10 +187,7 @@ namespace NiceCalc
                 case Keys.Y:
                     if (e.Control && !IsSuggestionBoxVisible)
                     {
-                        if (CanRedo)
-                        {
-                            Redo();
-                        }
+                        Redo();
                         isHandled = true;
                     }
                     break;
@@ -184,9 +219,14 @@ namespace NiceCalc
             typedThusFar = string.Empty;
         }
 
+
+
         private void AutoCompleteTextBox_MouseClick(object sender, MouseEventArgs e)
         {
-            HideListBox();
+            if (e.Button == MouseButtons.Left)
+            {
+                HideListBox();
+            }
         }
 
         private void listBox_Click(object sender, MouseEventArgs e)

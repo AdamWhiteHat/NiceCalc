@@ -24,8 +24,8 @@ namespace NiceCalc.Interpreter.Language
     {
         public static readonly string Numbers = "0123456789.";
         public static readonly string Operators = "+-*/%^";
-        public static readonly string Functions = "⎷|Əⅇ[⎿⎾±σγτ!ℙꓑꟼＦＤ⍻⌥⋂⋃∑∏πe";
-        public static readonly string ControlTokens = "(,)";
+        public static readonly string Functions = "⎷|Əⅇ[⎿⎾±σγτ!ℙꓑꟼＦＤ⍻⌥⋂⋃∑∏πe≟≥≤><";
+        public static readonly string ControlTokens = "(,)";                    
         
 
         public static readonly char E = 'e';

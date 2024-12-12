@@ -98,6 +98,34 @@ namespace NiceCalc
         }
         private int _precision;
 
+        public string FontName
+        {
+            get { return _fontName; }
+            set
+            {
+                if (_fontName != value)
+                {
+                    _fontName = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private string _fontName;
+
+        public float FontSize
+        {
+            get { return _fontSize; }
+            set
+            {
+                if (_fontSize != value)
+                {
+                    _fontSize = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private float _fontSize;
+
         public int RightPanelWidth
         {
             get { return _rightPanelWidth; }
@@ -216,6 +244,8 @@ namespace NiceCalc
             this.CopyInputToOutput = from.CopyInputToOutput;
             this.CtrlEnterForTotal = from.CtrlEnterForTotal;
             this.Precision = from.Precision;
+            this.FontName = from.FontName;
+            this.FontSize = from.FontSize;
             this.RightPanelWidth = from.RightPanelWidth;
             this.WindowWidth = from.WindowWidth;
             this.WindowHeight = from.WindowHeight;

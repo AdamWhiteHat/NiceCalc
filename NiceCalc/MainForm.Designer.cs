@@ -35,6 +35,7 @@ namespace NiceCalc
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.splitContainer_TopBottom = new System.Windows.Forms.SplitContainer();
             this.tbInput = new NiceCalc.AutoCompleteTextBox();
+            this._contextMenu = new NiceCalc.TextboxContextMenu(this.components);
             this.tbOutput = new System.Windows.Forms.RichTextBox();
             this.cbCopyInputToOutput = new System.Windows.Forms.CheckBox();
             this.splitContainer_LeftRight = new System.Windows.Forms.SplitContainer();
@@ -77,6 +78,7 @@ namespace NiceCalc
             this.listBoxVariables = new System.Windows.Forms.ListBox();
             this.cbExpandPanel = new System.Windows.Forms.CheckBox();
             this.imageList1 = new System.Windows.Forms.ImageList(this.components);
+            this.fontSelectionDialog = new System.Windows.Forms.FontDialog();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer_TopBottom)).BeginInit();
             this.splitContainer_TopBottom.Panel1.SuspendLayout();
             this.splitContainer_TopBottom.Panel2.SuspendLayout();
@@ -121,8 +123,8 @@ namespace NiceCalc
             this.splitContainer_TopBottom.Panel2.Cursor = System.Windows.Forms.Cursors.Default;
             this.splitContainer_TopBottom.Panel2.Padding = new System.Windows.Forms.Padding(4);
             this.splitContainer_TopBottom.Panel2MinSize = 150;
-            this.splitContainer_TopBottom.Size = new System.Drawing.Size(743, 538);
-            this.splitContainer_TopBottom.SplitterDistance = 296;
+            this.splitContainer_TopBottom.Size = new System.Drawing.Size(501, 532);
+            this.splitContainer_TopBottom.SplitterDistance = 292;
             this.splitContainer_TopBottom.SplitterWidth = 10;
             this.splitContainer_TopBottom.TabIndex = 3;
             // 
@@ -154,27 +156,42 @@ namespace NiceCalc
         "sqrt",
         "tan",
         "trunc"};
+            this.tbInput.ContextMenuStrip = this._contextMenu;
             this.tbInput.Cursor = System.Windows.Forms.Cursors.Default;
             this.tbInput.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tbInput.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbInput.Font = new System.Drawing.Font("Consolas", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.tbInput.Location = new System.Drawing.Point(4, 4);
             this.tbInput.Margin = new System.Windows.Forms.Padding(4);
             this.tbInput.Name = "tbInput";
             this.tbInput.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this.tbInput.Size = new System.Drawing.Size(735, 288);
+            this.tbInput.Size = new System.Drawing.Size(493, 284);
             this.tbInput.TabIndex = 25;
             this.tbInput.Text = "";
+            // 
+            // _contextMenu
+            // 
+            this._contextMenu.ImageScalingSize = new System.Drawing.Size(20, 20);
+            this._contextMenu.Name = "TextboxContextMenu";
+            this._contextMenu.ShowImageMargin = false;
+            this._contextMenu.Size = new System.Drawing.Size(146, 184);
+            this._contextMenu.CutMenuClicked += new System.EventHandler(this._contextMenu_CutMenuClicked);
+            this._contextMenu.CopyMenuClicked += new System.EventHandler(this._contextMenu_CopyMenuClicked);
+            this._contextMenu.PasteMenuClicked += new System.EventHandler(this._contextMenu_PasteMenuClicked);
+            this._contextMenu.SelectAllMenuClicked += new System.EventHandler(this._contextMenu_SelectAllMenuClicked);
+            this._contextMenu.UndoMenuClicked += new System.EventHandler(this._contextMenu_UndoMenuClicked);
+            this._contextMenu.RedoMenuClicked += new System.EventHandler(this._contextMenu_RedoMenuClicked);
+            this._contextMenu.ChangeFontMenuClicked += new System.EventHandler(this._contextMenu_ChangeFontMenuClicked);
             // 
             // tbOutput
             // 
             this.tbOutput.Cursor = System.Windows.Forms.Cursors.Default;
             this.tbOutput.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tbOutput.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbOutput.Font = new System.Drawing.Font("Consolas", 10.2F);
             this.tbOutput.Location = new System.Drawing.Point(4, 4);
             this.tbOutput.Margin = new System.Windows.Forms.Padding(4);
             this.tbOutput.Name = "tbOutput";
             this.tbOutput.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this.tbOutput.Size = new System.Drawing.Size(735, 224);
+            this.tbOutput.Size = new System.Drawing.Size(493, 222);
             this.tbOutput.TabIndex = 26;
             this.tbOutput.Text = "";
             // 
@@ -214,8 +231,8 @@ namespace NiceCalc
             this.splitContainer_LeftRight.Panel2.Controls.Add(this.flowLayoutPanel_RightToolbar);
             this.splitContainer_LeftRight.Panel2.Cursor = System.Windows.Forms.Cursors.Default;
             this.splitContainer_LeftRight.Panel2MinSize = 225;
-            this.splitContainer_LeftRight.Size = new System.Drawing.Size(1003, 538);
-            this.splitContainer_LeftRight.SplitterDistance = 743;
+            this.splitContainer_LeftRight.Size = new System.Drawing.Size(749, 532);
+            this.splitContainer_LeftRight.SplitterDistance = 501;
             this.splitContainer_LeftRight.SplitterWidth = 10;
             this.splitContainer_LeftRight.TabIndex = 2;
             // 
@@ -240,7 +257,7 @@ namespace NiceCalc
             this.flowLayoutPanel_RightToolbar.MinimumSize = new System.Drawing.Size(225, 2);
             this.flowLayoutPanel_RightToolbar.Name = "flowLayoutPanel_RightToolbar";
             this.flowLayoutPanel_RightToolbar.Padding = new System.Windows.Forms.Padding(1);
-            this.flowLayoutPanel_RightToolbar.Size = new System.Drawing.Size(250, 538);
+            this.flowLayoutPanel_RightToolbar.Size = new System.Drawing.Size(238, 532);
             this.flowLayoutPanel_RightToolbar.TabIndex = 1;
             // 
             // flowLayoutPanel_Precision
@@ -771,11 +788,17 @@ namespace NiceCalc
             this.imageList1.Images.SetKeyName(0, "ExpandRightArrow");
             this.imageList1.Images.SetKeyName(1, "ExpandDownArrow");
             // 
+            // fontSelectionDialog
+            // 
+            this.fontSelectionDialog.Font = new System.Drawing.Font("Consolas", 10.2F);
+            this.fontSelectionDialog.FontMustExist = true;
+            this.fontSelectionDialog.ShowEffects = false;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1003, 538);
+            this.ClientSize = new System.Drawing.Size(749, 532);
             this.Controls.Add(this.splitContainer_LeftRight);
             this.Margin = new System.Windows.Forms.Padding(4);
             this.MinimumSize = new System.Drawing.Size(458, 363);
@@ -844,7 +867,8 @@ namespace NiceCalc
 		private System.Windows.Forms.FlowLayoutPanel flowToolbarPanel_Row5;
 		private System.Windows.Forms.Button btnPreviousPrime;
 		private System.Windows.Forms.Button btnNextPrime;
-		private CheckBox cbPreferFractionsResult;
+        private NiceCalc.TextboxContextMenu _contextMenu;
+        private CheckBox cbPreferFractionsResult;
 		private AutoCompleteTextBox tbInput;
 		private RichTextBox tbOutput;
 		private Button btnEquals;
@@ -858,5 +882,6 @@ namespace NiceCalc
         private FlowLayoutPanel flowLayoutPanel_Precision;
         private FlowLayoutPanel flowLayoutPanel_Row0;
         private Button btnPow;
+        private FontDialog fontSelectionDialog;
     }
 }

@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using System.Management;
 using NiceCalc.Tokenization;
+using System.ComponentModel;
 
 namespace NiceCalc
 {
@@ -251,6 +252,13 @@ namespace NiceCalc
             BigDecimal.AlwaysNormalize = true;
             BigDecimal.AlwaysTruncate = true;
 
+            string fontName = currentSettings.FontName;
+            float fontSize = currentSettings.FontSize;
+
+            Font loadedFont = new Font(fontName, fontSize);
+            tbInput.Font = loadedFont;
+            tbOutput.Font = loadedFont;
+
             int splitterDistance = splitContainer_LeftRight.Size.Width - splitContainer_LeftRight.SplitterWidth - CurrentSettings.RightPanelWidth;
             splitContainer_LeftRight.SplitterDistance = splitterDistance;
         }
@@ -297,12 +305,61 @@ namespace NiceCalc
             CurrentSettings.CtrlEnterForTotal = cbCtrlEnterForTotal.Checked;
             CurrentSettings.PreferFractionsResult = cbPreferFractionsResult.Checked;
 
+            CurrentSettings.FontName = tbInput.Font.Name;
+            CurrentSettings.FontSize = tbInput.Font.Size;
+
             int rightPanelWidth = splitContainer_LeftRight.Size.Width - splitContainer_LeftRight.SplitterDistance - splitContainer_LeftRight.SplitterWidth;
             CurrentSettings.RightPanelWidth = rightPanelWidth;
 
             CurrentSettings.Save();
         }
 
+        #endregion
+
+        #region Context Menu Event Handlers
+
+        private void _contextMenu_CutMenuClicked(object sender, EventArgs e)
+        {
+            tbInput.Cut();
+        }
+
+        private void _contextMenu_CopyMenuClicked(object sender, EventArgs e)
+        {
+            tbInput.Copy();
+        }
+
+        private void _contextMenu_PasteMenuClicked(object sender, EventArgs e)
+        {
+            tbInput.Paste();
+        }
+
+        private void _contextMenu_SelectAllMenuClicked(object sender, EventArgs e)
+        {
+            tbInput.SelectAll();
+        }
+
+        private void _contextMenu_UndoMenuClicked(object sender, EventArgs e)
+        {
+            tbInput.Undo();
+        }
+
+        private void _contextMenu_RedoMenuClicked(object sender, EventArgs e)
+        {
+            tbInput.Redo();
+        }
+
+        private void _contextMenu_ChangeFontMenuClicked(object sender, EventArgs e)
+        {
+            if (fontSelectionDialog.ShowDialog() == DialogResult.OK)
+            {
+                Font selectedFont = fontSelectionDialog.Font;
+                tbInput.Font = selectedFont;
+                tbOutput.Font = selectedFont;
+                CurrentSettings.FontName = selectedFont.Name;
+                CurrentSettings.FontSize = selectedFont.Size;
+            }
+        }
+        
         #endregion
 
     }
