@@ -27,10 +27,10 @@ namespace NiceCalc.Interpreter
 		/// that are not strictly infix, such as function calls, e.g. "sqrt(42)"
 		/// and the factorial notation, e.g. "42!"
 		/// </summary>
-		public static NumberToken Evaluate(List<IToken> tokens, NumericType type)
+		public static IToken Evaluate(List<IToken> tokens, NumericType type)
 		{
 			Queue<IToken> postFixTokenQueue = ShuntingYardConverter.Convert(tokens);
-			NumberToken result = PostfixNotation.Evaluate(postFixTokenQueue, type);
+            IToken result = PostfixNotation.Evaluate(postFixTokenQueue, type);
 			return result;
 		}
 

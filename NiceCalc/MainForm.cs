@@ -133,15 +133,15 @@ namespace NiceCalc
 
                         try
                         {
-
                             string toEval = expression.Replace(" ", "").Replace("\t", "");
 
-                            NumberToken resultToken = CalculatorSession.Eval(toEval);
-
+                            IToken resultToken = CalculatorSession.Eval(toEval);
                             string result = "";
-                            if (CurrentSettings.PreferFractionsResult)
+
+                            if (resultToken.TokenType == TokenType.Number && CurrentSettings.PreferFractionsResult)
                             {
-                                result = resultToken.RationalValue.ToString();
+                                NumberToken numericResults = (NumberToken)resultToken;
+                                result = numericResults.RationalValue.ToString();
                             }
                             else
                             {

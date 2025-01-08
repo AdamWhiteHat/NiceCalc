@@ -53,7 +53,7 @@ namespace NiceCalc.Execution
             BoundList = null;
         }
 
-        public NumberToken Eval(string expression)
+        public IToken Eval(string expression)
         {
             LineNumber++;
 
@@ -91,26 +91,32 @@ namespace NiceCalc.Execution
             BoundList = bindingList;
         }
 
-        private NumberToken EvaluateAndAssign(string identifier, string assignmentExpression)
+        private IToken EvaluateAndAssign(string identifier, string assignmentExpression)
         {
-            NumberToken results = Evaluate(assignmentExpression);
+            IToken results = Evaluate(assignmentExpression);
+            if (results.TokenType != TokenType.Number)
+            {
+                return results;
+            }
+
+            NumberToken numericResults = (NumberToken)results;
 
             if (Variables.ContainsKey(identifier))
             {
                 NumberToken value = Variables[identifier];
-                if (value != results)
+                if (value != numericResults)
                 {
-                    Variables[identifier] = results;
+                    Variables[identifier] = numericResults;
                 }
             }
             else
             {
-                Variables.Add(identifier, results);
+                Variables.Add(identifier, numericResults);
             }
 
             if (BoundList != null)
             {
-                string formattedString = $"{identifier} = {results}";
+                string formattedString = $"{identifier} = {numericResults}";
 
                 var found = BoundList.Cast<string>().FirstOrDefault(itm => itm.Contains(identifier));
                 if (found != default(string))
@@ -128,11 +134,11 @@ namespace NiceCalc.Execution
                 }
             }
 
-            return results;
+            return numericResults;
         }
 
 
-        private NumberToken Evaluate(string expression)
+        private IToken Evaluate(string expression)
         {
             if (!string.IsNullOrWhiteSpace(expression))
             {
@@ -172,13 +178,17 @@ namespace NiceCalc.Execution
                 index = tokens.FindIndex(index + 1, tok => tok.TokenType == TokenType.Variable);
             }
 
-            if(unevaluatable)
-            {        
-                
+            if (unevaluatable)
+            {
+
             }
 
-            NumberToken results = InfixNotation.Evaluate(tokens, PreferredOutputFormat);
-            results = new NumberToken(BigDecimal.Round(results.RealValue, BigDecimal.Precision));
+            IToken results = InfixNotation.Evaluate(tokens, PreferredOutputFormat);
+            NumberToken? numericResults = results as NumberToken?;
+            if (numericResults != null)
+            {
+                return new NumberToken(BigDecimal.Round(numericResults.Value.RealValue, BigDecimal.Precision));
+            }
             return results;
         }
 

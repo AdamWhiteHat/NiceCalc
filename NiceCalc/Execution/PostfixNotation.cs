@@ -23,7 +23,7 @@ namespace NiceCalc.Execution
     {
         private static readonly string AllowedCharacters = Syntax.Numbers + Syntax.Operators + Syntax.Functions + " /";
 
-        public static NumberToken Evaluate(Queue<IToken> postfixTokenQueue, NumericType numericType)
+        public static IToken Evaluate(Queue<IToken> postfixTokenQueue, NumericType numericType)
         {
             if (postfixTokenQueue == null || postfixTokenQueue.Count < 1)
             {
@@ -51,7 +51,7 @@ namespace NiceCalc.Execution
                 Stack = new Stack<IToken>();
             }
 
-            public NumberToken Eval()
+            public IToken Eval()
             {
                 IToken token;
 
@@ -124,10 +124,13 @@ namespace NiceCalc.Execution
                 if (Stack.Count == 1)
                 {
                     IToken lastToken = Stack.Pop();
-                    if (lastToken is NumberToken)
+                    if (lastToken.TokenType == TokenType.Number)
                     {
-                        NumberToken result = (NumberToken)lastToken;
-                        return result;
+                       return (NumberToken)lastToken;
+                    }
+                    else if(lastToken .TokenType == TokenType.Literal)
+                    {
+                        return lastToken;
                     }
                     throw new ParsingException($"The last token on the stack was not of type {nameof(NumberToken)}.", token: lastToken, stack: Stack);
 
