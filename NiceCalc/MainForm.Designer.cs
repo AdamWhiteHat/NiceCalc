@@ -131,7 +131,7 @@ namespace NiceCalc
             // tbInput
             // 
             this.tbInput.AcceptsTab = true;
-            this.tbInput.AutoCompleteCustomSource = new string[] {
+            this.tbInput.AutoCompleteCustomSource = new System.Collections.Generic.List<string> {
         "#",
         "abs",
         "ceil",

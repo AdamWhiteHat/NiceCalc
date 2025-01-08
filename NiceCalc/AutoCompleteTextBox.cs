@@ -21,17 +21,17 @@ namespace NiceCalc
 
         public bool IsSuggestionBoxVisible { get { return _listBox.Visible; } }
 
-        public string[] AutoCompleteCustomSource
+        public List<string> AutoCompleteCustomSource
         {
             get { return _autoCompleteCustomSource; }
             set { _autoCompleteCustomSource = value; }
         }
-        private string[] _autoCompleteCustomSource;
+        private List<string> _autoCompleteCustomSource;
 
         private bool _isAdded;
         private ListBox _listBox;
         private string typedThusFar = string.Empty;
-       
+
 
         private static readonly char[] Delimiters = new char[] { ' ', '\r', '\n', '\t', '(', ')' };
 
@@ -44,7 +44,7 @@ namespace NiceCalc
         }
 
         private void InitializeComponent()
-        {           
+        {
             this.SuspendLayout();
             this._listBox = new ListBox();
             // 
@@ -65,7 +65,7 @@ namespace NiceCalc
             _isAdded = false;
 
             KeyDown += this_KeyDown;
-            MouseClick += AutoCompleteTextBox_MouseClick;          
+            MouseClick += AutoCompleteTextBox_MouseClick;
         }
 
         public new void Clear()
@@ -251,7 +251,7 @@ namespace NiceCalc
         {
             return (Multiline
                     && AutoCompleteCustomSource != null
-                    && AutoCompleteCustomSource.Length > 0);
+                    && AutoCompleteCustomSource.Any());
         }
 
         private void HideListBox()
@@ -303,7 +303,7 @@ namespace NiceCalc
 
             if (incompleteWord.Length > 0)
             {
-                string[] autoCompleteWords = AutoCompleteCustomSource.Cast<string>().ToArray();
+                string[] autoCompleteWords = AutoCompleteCustomSource.ToArray();
                 string[] matches = Array.FindAll(autoCompleteWords,
                                     x => (x.StartsWith(incompleteWord, StringComparison.OrdinalIgnoreCase)/* && !SelectedValues.Contains(x)*/));
 

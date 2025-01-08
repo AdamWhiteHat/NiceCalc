@@ -15,6 +15,7 @@ using Newtonsoft.Json.Linq;
 using System.Management;
 using NiceCalc.Tokenization;
 using System.ComponentModel;
+using System.Collections.Specialized;
 
 namespace NiceCalc
 {
@@ -32,32 +33,32 @@ namespace NiceCalc
 
         private void MainForm_Shown(object sender, System.EventArgs e)
         {
-            string[] autocompleteItems = new string[]
+            List<string> autocompleteItems = new List<string>
             {
-                    "#",
-                    "abs",
-                    "ceil",
-                    "cos",
-                    "divisors",
-                    "factor",
-                    "factorial",
-                    "floor",
-                    "gcd",
-                    "isprime",
-                    "lcm",
-                    "ln",
-                    "logn",
-                    "nextprime",
-                    "nthroot",
-                    "pi",
-                    "previousprime",
-                    "round",
-                    "sign",
-                    "sin",
-                    "sqrt",
-                    "tan",
-                    "trunc"
-                };
+                "#",
+                "abs",
+                "ceil",
+                "cos",
+                "divisors",
+                "factor",
+                "factorial",
+                "floor",
+                "gcd",
+                "isprime",
+                "lcm",
+                "ln",
+                "logn",
+                "nextprime",
+                "nthroot",
+                "pi",
+                "previousprime",
+                "round",
+                "sign",
+                "sin",
+                "sqrt",
+                "tan",
+                "trunc"
+            };
             tbInput.AutoCompleteCustomSource = autocompleteItems;
 
             CurrentSettings = new Settings();
@@ -66,10 +67,30 @@ namespace NiceCalc
             RegisterSettingsEventHandles();
             CalculatorSession = new CalculatorSession(cbPreferFractionsResult.Checked ? NumericType.Rational : NumericType.Real);
 
+            CalculatorSession.Variables.CollectionChanged += Variables_CollectionChanged;
+
             ResetBoundVariables();
 
             tbInput.ExecuteExpression += TbInput_ExecuteExpression;
             tbInput.ClearOutput += TbInput_ClearOutput;
+        }
+
+        private void Variables_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Add || e.Action == NotifyCollectionChangedAction.Replace)
+            {
+                var newItems = e.NewItems.Cast<KeyValuePair<string, NumberToken>>().Select(kvp => kvp.Key).ToList();
+                tbInput.AutoCompleteCustomSource.AddRange(newItems);
+            }
+            if (e.Action == NotifyCollectionChangedAction.Remove || e.Action == NotifyCollectionChangedAction.Reset || e.Action == NotifyCollectionChangedAction.Replace)
+            {
+                var oldItems = e.OldItems.Cast<KeyValuePair<string, NumberToken>>().Select(kvp => kvp.Key).ToList();
+                foreach (string item in oldItems)
+                {
+                    tbInput.AutoCompleteCustomSource.Remove(item);
+                }
+            }
+
         }
 
         private void TbInput_ExecuteExpression(object sender, EventArgs e)
@@ -359,7 +380,7 @@ namespace NiceCalc
                 CurrentSettings.FontSize = selectedFont.Size;
             }
         }
-        
+
         #endregion
 
     }
