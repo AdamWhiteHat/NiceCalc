@@ -1,0 +1,13 @@
+{
+  "CopyInputToOutput": false,
+  "CtrlEnterForTotal": false,
+  "PreferFractionsResult": false,
+  "Precision": 50,
+  "FontName": "Consolas",
+  "FontSize": 20.25,
+  "RightPanelWidth": 225,
+  "WindowWidth": 705,
+  "WindowHeight": 525,
+  "WindowLocationX": 215,
+  "WindowLocationY": 5
+}
