@@ -1,8 +1,8 @@
 {
-  "CopyInputToOutput": false,
+  "CopyInputToOutput": true,
   "CtrlEnterForTotal": false,
   "PreferFractionsResult": false,
-  "Precision": 50,
+  "Precision": 20,
   "FontName": "Consolas",
   "FontSize": 20.25,
   "RightPanelWidth": 225,

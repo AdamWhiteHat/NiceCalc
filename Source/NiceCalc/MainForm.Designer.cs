@@ -123,7 +123,7 @@ namespace NiceCalc
             this.splitContainer_TopBottom.Panel2.Cursor = System.Windows.Forms.Cursors.Default;
             this.splitContainer_TopBottom.Panel2.Padding = new System.Windows.Forms.Padding(4);
             this.splitContainer_TopBottom.Panel2MinSize = 150;
-            this.splitContainer_TopBottom.Size = new System.Drawing.Size(501, 532);
+            this.splitContainer_TopBottom.Size = new System.Drawing.Size(495, 532);
             this.splitContainer_TopBottom.SplitterDistance = 292;
             this.splitContainer_TopBottom.SplitterWidth = 10;
             this.splitContainer_TopBottom.TabIndex = 3;
@@ -131,31 +131,7 @@ namespace NiceCalc
             // tbInput
             // 
             this.tbInput.AcceptsTab = true;
-            this.tbInput.AutoCompleteCustomSource = new System.Collections.Generic.List<string> {
-        "#",
-        "abs",
-        "ceil",
-        "cos",
-        "divisors",
-        "factor",
-        "factorial",
-        "floor",
-        "gcd",
-        "isprime",
-        "lcm",
-        "ln",
-        "logn",
-        "nextprime",
-        "nthroot",
-        "pi",
-        "pow",
-        "previousprime",
-        "round",
-        "sign",
-        "sin",
-        "sqrt",
-        "tan",
-        "trunc"};
+            this.tbInput.AutoCompleteCustomSource = null;
             this.tbInput.ContextMenuStrip = this._contextMenu;
             this.tbInput.Cursor = System.Windows.Forms.Cursors.Default;
             this.tbInput.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -164,7 +140,7 @@ namespace NiceCalc
             this.tbInput.Margin = new System.Windows.Forms.Padding(4);
             this.tbInput.Name = "tbInput";
             this.tbInput.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this.tbInput.Size = new System.Drawing.Size(493, 284);
+            this.tbInput.Size = new System.Drawing.Size(487, 284);
             this.tbInput.TabIndex = 25;
             this.tbInput.Text = "";
             // 
@@ -191,7 +167,7 @@ namespace NiceCalc
             this.tbOutput.Margin = new System.Windows.Forms.Padding(4);
             this.tbOutput.Name = "tbOutput";
             this.tbOutput.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this.tbOutput.Size = new System.Drawing.Size(493, 222);
+            this.tbOutput.Size = new System.Drawing.Size(487, 222);
             this.tbOutput.TabIndex = 26;
             this.tbOutput.Text = "";
             // 
@@ -232,7 +208,7 @@ namespace NiceCalc
             this.splitContainer_LeftRight.Panel2.Cursor = System.Windows.Forms.Cursors.Default;
             this.splitContainer_LeftRight.Panel2MinSize = 225;
             this.splitContainer_LeftRight.Size = new System.Drawing.Size(749, 532);
-            this.splitContainer_LeftRight.SplitterDistance = 501;
+            this.splitContainer_LeftRight.SplitterDistance = 495;
             this.splitContainer_LeftRight.SplitterWidth = 10;
             this.splitContainer_LeftRight.TabIndex = 2;
             // 
@@ -257,7 +233,7 @@ namespace NiceCalc
             this.flowLayoutPanel_RightToolbar.MinimumSize = new System.Drawing.Size(225, 2);
             this.flowLayoutPanel_RightToolbar.Name = "flowLayoutPanel_RightToolbar";
             this.flowLayoutPanel_RightToolbar.Padding = new System.Windows.Forms.Padding(1);
-            this.flowLayoutPanel_RightToolbar.Size = new System.Drawing.Size(238, 532);
+            this.flowLayoutPanel_RightToolbar.Size = new System.Drawing.Size(244, 532);
             this.flowLayoutPanel_RightToolbar.TabIndex = 1;
             // 
             // flowLayoutPanel_Precision
@@ -308,6 +284,7 @@ namespace NiceCalc
             0,
             0,
             0});
+            this.numericPrecision.KeyDown += new System.Windows.Forms.KeyEventHandler(this.numericPrecision_KeyDown);
             // 
             // cbPreferFractionsResult
             // 

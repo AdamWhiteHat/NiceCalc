@@ -95,7 +95,7 @@ namespace NiceCalc
 
         private void TbInput_ExecuteExpression(object sender, EventArgs e)
         {
-            ProcessLines(tbInput.Lines);
+            Calculate();
         }
 
         private void TbInput_ClearOutput(object sender, EventArgs e)
@@ -103,10 +103,23 @@ namespace NiceCalc
             tbOutput.Clear();
         }
 
+        private void numericPrecision_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                Calculate();
+            }
+        }
+
         private void ResetBoundVariables()
         {
             listBoxVariables.Items.Clear();
             CalculatorSession.BindToList(this.listBoxVariables.Items);
+        }
+
+        public void Calculate()
+        {
+            ProcessLines(tbInput.Lines);
         }
 
         private void ProcessLines(string[] lines)
@@ -126,10 +139,24 @@ namespace NiceCalc
                 //_variables = calculatorSessionBindingSource.List;
             }
 
-            foreach (string line in lines)
+            foreach (string immutableLine in lines)
             {
-                if (!string.IsNullOrWhiteSpace(line))
+                string line = immutableLine;
+
+                if (string.IsNullOrWhiteSpace(line))
                 {
+                    tbOutput.AppendText(Environment.NewLine);
+                    continue;
+                }
+
+                // Simple comment syntax support. 
+                // Comment string must come at the beginning of the line (less whitespace)
+                // and the comment will extend to the end of the line.
+                if (Syntax.SingleLineComments.Any(comment => line.Trim().StartsWith(comment)))
+                {
+                    continue;
+                }
+
                     List<string> expressions = new List<string>();
 
                     bool multiExpressionedLine = line.Contains(';');
@@ -189,8 +216,8 @@ namespace NiceCalc
                             tbOutput.AppendText(ex.ToString());
                         }
                     }
-                }
-                tbOutput.AppendText(Environment.NewLine);
+
+
             }
         }
 
