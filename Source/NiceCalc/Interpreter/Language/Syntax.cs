@@ -28,7 +28,7 @@ namespace NiceCalc.Interpreter.Language
         public static readonly string ControlTokens = "(,)";
 
 
-        public static readonly string[] SingleLineComments = new string[] { "'", "\"" };
+        public static readonly string[] SingleLineComments = new string[] { "//", "/*", "--", "#", "'" };
         public static readonly char E = 'e';
         public static readonly char Pi = 'π';
         public static readonly char Product = '∏';
