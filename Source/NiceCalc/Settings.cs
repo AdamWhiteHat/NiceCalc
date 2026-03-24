@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -9,6 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Linq;
+using ExtendedNumerics;
+using Newtonsoft.Json;
 using static System.Windows.Forms.LinkLabel;
 
 namespace NiceCalc
@@ -84,19 +85,50 @@ namespace NiceCalc
         }
         private bool _preferFractionsResult;
 
-        public int Precision
+        [JsonProperty("BigDecimal.Precision")]
+        public int BigDecimal_Precision
         {
-            get { return _precision; }
+            get { return _bigDecimal_Precision; }
             set
             {
-                if (_precision != value)
+                if (_bigDecimal_Precision != value)
                 {
-                    _precision = value;
+                    _bigDecimal_Precision = value;
                     OnPropertyChanged();
                 }
             }
         }
-        private int _precision;
+        private int _bigDecimal_Precision;
+
+        [JsonProperty("BigDecimal.AlwaysNormalize")]
+        public bool BigDecimal_AlwaysNormalize
+        {
+            get { return _bigDecimal_AlwaysNormalize; }
+            set
+            {
+                if (_bigDecimal_AlwaysNormalize != value)
+                {
+                    _bigDecimal_AlwaysNormalize = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private bool _bigDecimal_AlwaysNormalize;
+
+        [JsonProperty("BigDecimal.AlwaysTruncate")]
+        public bool BigDecimal_AlwaysTruncate
+        {
+            get { return _bigDecimal_AlwaysTruncate; }
+            set
+            {
+                if (_bigDecimal_AlwaysTruncate != value)
+                {
+                    _bigDecimal_AlwaysTruncate = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private bool _bigDecimal_AlwaysTruncate;
 
         public string FontName
         {
@@ -219,6 +251,7 @@ namespace NiceCalc
         {
             if (IsDirty == true)
             {
+                //JsonSerializerSettings settings = new JsonSerializerSettings();
                 string json = JsonConvert.SerializeObject(this, Newtonsoft.Json.Formatting.Indented);
                 File.WriteAllText(SettingsFilename, json);
                 IsDirty = false;
@@ -243,7 +276,9 @@ namespace NiceCalc
         {
             this.CopyInputToOutput = from.CopyInputToOutput;
             this.CtrlEnterForTotal = from.CtrlEnterForTotal;
-            this.Precision = from.Precision;
+            this.BigDecimal_Precision = from.BigDecimal_Precision;
+            this.BigDecimal_AlwaysNormalize = from.BigDecimal_AlwaysNormalize;
+            this.BigDecimal_AlwaysTruncate = from.BigDecimal_AlwaysTruncate;
             this.FontName = from.FontName;
             this.FontSize = from.FontSize;
             this.RightPanelWidth = from.RightPanelWidth;

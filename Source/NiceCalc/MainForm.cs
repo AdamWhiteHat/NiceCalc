@@ -12,7 +12,6 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
-using System.Management;
 using NiceCalc.Tokenization;
 using System.ComponentModel;
 using System.Collections.Specialized;
@@ -59,7 +58,6 @@ namespace NiceCalc
                 "tan",
                 "trunc"
             };
-            tbInput.AutoCompleteCustomSource = autocompleteItems;
 
             CurrentSettings = new Settings();
             CurrentSettings.Load();
@@ -71,34 +69,42 @@ namespace NiceCalc
 
             ResetBoundVariables();
 
-            tbInput.ExecuteExpression += TbInput_ExecuteExpression;
-            tbInput.ClearOutput += TbInput_ClearOutput;
+            tbInput.Initialize(autocompleteItems, Calculate, ClearOutput);
         }
 
         private void Variables_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             if (e.Action == NotifyCollectionChangedAction.Add || e.Action == NotifyCollectionChangedAction.Replace)
             {
-                var newItems = e.NewItems.Cast<KeyValuePair<string, NumberToken>>().Select(kvp => kvp.Key).ToList();
-                tbInput.AutoCompleteCustomSource.AddRange(newItems);
+                var newItems = e.NewItems.Cast<KeyValuePair<string, NumberToken>>().Select(kvp => kvp.Key).ToArray();
+                tbInput.AddAutoCompleteSuggestions(newItems);
+
+                /*
+                // Autocomplete annoyingly keeps coming up and ends up getting selected when I am wanting to address my 1-character variable names.
+                // Adding the variable names to the autocomplete list wasnt working,
+                // so just remove functions from the autocomplete list that start with the same character
+
+                var newItems_FirstCharacter = e.NewItems.Cast<KeyValuePair<string, NumberToken>>().Select(kvp => kvp.Key.ToLower()[0]).ToList();
+                var beginsWithSameCharacter = tbInput.AutoCompleteCustomSource.Where(s => newItems_FirstCharacter.Contains(s[0]));
+
+                foreach (var toRemove in beginsWithSameCharacter)
+                {
+                    tbInput.AutoCompleteCustomSource.Remove(toRemove);
+                }
+                */
             }
             if (e.Action == NotifyCollectionChangedAction.Remove || e.Action == NotifyCollectionChangedAction.Reset || e.Action == NotifyCollectionChangedAction.Replace)
             {
                 var oldItems = e.OldItems.Cast<KeyValuePair<string, NumberToken>>().Select(kvp => kvp.Key).ToList();
                 foreach (string item in oldItems)
                 {
-                    tbInput.AutoCompleteCustomSource.Remove(item);
+                    tbInput.RemoveAutoCompleteSuggestion(item);
                 }
             }
 
         }
 
-        private void TbInput_ExecuteExpression(object sender, EventArgs e)
-        {
-            Calculate();
-        }
-
-        private void TbInput_ClearOutput(object sender, EventArgs e)
+        private void ClearOutput()
         {
             tbOutput.Clear();
         }
@@ -157,65 +163,65 @@ namespace NiceCalc
                     continue;
                 }
 
-                    List<string> expressions = new List<string>();
+                List<string> expressions = new List<string>();
 
-                    bool multiExpressionedLine = line.Contains(';');
-                    if (multiExpressionedLine)
+                bool multiExpressionedLine = line.Contains(';');
+                if (multiExpressionedLine)
+                {
+                    expressions.AddRange(line.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
+                }
+                else
+                {
+                    expressions.Add(line);
+                }
+
+                foreach (string expression in expressions)
+                {
+                    int leftSpaces = expression.AsEnumerable().TakeWhile(c => char.IsWhiteSpace(c)).Count();
+                    int rightSpaces = expression.AsEnumerable().Reverse().TakeWhile(c => char.IsWhiteSpace(c)).Count();
+
+                    if (!multiExpressionedLine && !expression.Contains(Syntax.AssignmentOperator) && CurrentSettings.CopyInputToOutput)
                     {
-                        expressions.AddRange(line.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
+                        tbOutput.AppendText(expression + " = ");
                     }
-                    else
-                    {
-                        expressions.Add(line);
-                    }
 
-                    foreach (string expression in expressions)
+                    try
                     {
-                        int leftSpaces = expression.AsEnumerable().TakeWhile(c => char.IsWhiteSpace(c)).Count();
-                        int rightSpaces = expression.AsEnumerable().Reverse().TakeWhile(c => char.IsWhiteSpace(c)).Count();
+                        string toEval = expression.Replace(" ", "").Replace("\t", "");
 
-                        if (!multiExpressionedLine && CurrentSettings.CopyInputToOutput)
+                        IToken resultToken = CalculatorSession.Eval(toEval);
+                        string result = "";
+
+                        if (resultToken.TokenType == TokenType.Number && CurrentSettings.PreferFractionsResult)
                         {
-                            tbOutput.AppendText(expression + " = ");
+                            NumberToken numericResults = (NumberToken)resultToken;
+                            result = numericResults.RationalValue.ToString();
+                        }
+                        else
+                        {
+                            result = resultToken.ToString();
                         }
 
-                        try
+                        if (leftSpaces > 0)
                         {
-                            string toEval = expression.Replace(" ", "").Replace("\t", "");
-
-                            IToken resultToken = CalculatorSession.Eval(toEval);
-                            string result = "";
-
-                            if (resultToken.TokenType == TokenType.Number && CurrentSettings.PreferFractionsResult)
-                            {
-                                NumberToken numericResults = (NumberToken)resultToken;
-                                result = numericResults.RationalValue.ToString();
-                            }
-                            else
-                            {
-                                result = resultToken.ToString();
-                            }
-
-                            if (leftSpaces > 0)
-                            {
-                                tbOutput.AppendText(new string(Enumerable.Repeat(' ', leftSpaces).ToArray()));
-                            }
-                            tbOutput.AppendText(result);
-                            if (rightSpaces > 0)
-                            {
-                                tbOutput.AppendText(new string(Enumerable.Repeat(' ', rightSpaces).ToArray()));
-                            }
-
-                            if (multiExpressionedLine)
-                            {
-                                tbOutput.AppendText(";");
-                            }
+                            tbOutput.AppendText(new string(Enumerable.Repeat(' ', leftSpaces).ToArray()));
                         }
-                        catch (Exception ex)
+                        tbOutput.AppendText(result);
+                        if (rightSpaces > 0)
                         {
-                            tbOutput.AppendText(ex.ToString());
+                            tbOutput.AppendText(new string(Enumerable.Repeat(' ', rightSpaces).ToArray()));
+                        }
+
+                        if (multiExpressionedLine)
+                        {
+                            tbOutput.AppendText(";");
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        tbOutput.AppendText(ex.ToString());
+                    }
+                }
 
 
             }
@@ -230,42 +236,13 @@ namespace NiceCalc
         void BtnFunctionSimple_Click(object sender, EventArgs e)
         {
             Button btn = (Button)sender;
-
-            int start = tbInput.SelectionStart;
-            int end = start + tbInput.SelectionLength;
-
-            string text = tbInput.Text;
-
-            int insertionLength = btn.Text.Length;
-            text = text.Insert(end, btn.Text);
-
-            tbInput.Text = text;
-
-            tbInput.SelectionStart = end + insertionLength;
-            tbInput.SelectionLength = 0;
-
-            tbInput.Focus();
+            tbInput.InsertTextAfterCaret(btn.Text);
         }
 
         void BtnFunctionParameterize_Click(object sender, EventArgs e)
         {
             Button btn = (Button)sender;
-
-            int start = tbInput.SelectionStart;
-            int end = start + tbInput.SelectionLength;
-
-            string text = tbInput.Text;
-
-            text = text.Insert(end, ")");
-            text = text.Insert(start, btn.Text + "(");
-
-            tbInput.Text = text;
-
-            int restoreLocation = text.IndexOf('(', start) + 1;
-            tbInput.SelectionStart = restoreLocation;
-            tbInput.SelectionLength = 0;
-
-            tbInput.Focus();
+            tbInput.InsertFunctionAroundCaret(btn.Text);
         }
 
         private void cbExpandPanel_CheckedChanged(object sender, EventArgs e)
@@ -295,10 +272,10 @@ namespace NiceCalc
             cbCtrlEnterForTotal.Checked = currentSettings.CtrlEnterForTotal;
             cbPreferFractionsResult.Checked = currentSettings.PreferFractionsResult;
 
-            numericPrecision.Value = currentSettings.Precision;
-            BigDecimal.Precision = currentSettings.Precision;
-            BigDecimal.AlwaysNormalize = true;
-            BigDecimal.AlwaysTruncate = true;
+            numericPrecision.Value = currentSettings.BigDecimal_Precision;
+            BigDecimal.Precision = currentSettings.BigDecimal_Precision;
+            BigDecimal.AlwaysNormalize = currentSettings.BigDecimal_AlwaysNormalize;
+            BigDecimal.AlwaysTruncate = currentSettings.BigDecimal_AlwaysTruncate;
 
             string fontName = currentSettings.FontName;
             float fontSize = currentSettings.FontSize;
@@ -338,16 +315,32 @@ namespace NiceCalc
 
         private void NumericPrecision_ValueChanged(object sender, EventArgs e)
         {
-            CurrentSettings.Precision = (int)numericPrecision.Value;
-            BigDecimal.Precision = CurrentSettings.Precision;
+            CurrentSettings.BigDecimal_Precision = (int)numericPrecision.Value;
+            BigDecimal.Precision = CurrentSettings.BigDecimal_Precision;
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            CurrentSettings.WindowLocationX = this.Location.X;
-            CurrentSettings.WindowLocationY = this.Location.Y;
-            CurrentSettings.WindowWidth = this.Width;
-            CurrentSettings.WindowHeight = this.Height;
+            // When the form is minimized, Form.Location is set to (-32000,-32000), so use RestoreBounds instead...
+            if (this.WindowState == FormWindowState.Minimized || this.WindowState == FormWindowState.Maximized)
+            {
+                CurrentSettings.WindowLocationX = this.RestoreBounds.X;
+                CurrentSettings.WindowLocationY = this.RestoreBounds.Y;
+                CurrentSettings.WindowWidth = this.RestoreBounds.Width;
+                CurrentSettings.WindowHeight = this.RestoreBounds.Height;
+            }
+            else
+            {
+                // Only set RightPanelWidth in the case that the form is not minimized,
+                // as splitContainer_LeftRight.Size was (0,0) when minimized, resulting in a negative value being calculated here.
+                int rightPanelWidth = splitContainer_LeftRight.Size.Width - splitContainer_LeftRight.SplitterDistance - splitContainer_LeftRight.SplitterWidth;
+                CurrentSettings.RightPanelWidth = rightPanelWidth;
+
+                CurrentSettings.WindowLocationX = this.Location.X;
+                CurrentSettings.WindowLocationY = this.Location.Y;
+                CurrentSettings.WindowWidth = this.Width;
+                CurrentSettings.WindowHeight = this.Height;
+            }
 
             CurrentSettings.CopyInputToOutput = cbCopyInputToOutput.Checked;
             CurrentSettings.CtrlEnterForTotal = cbCtrlEnterForTotal.Checked;
@@ -355,9 +348,6 @@ namespace NiceCalc
 
             CurrentSettings.FontName = tbInput.Font.Name;
             CurrentSettings.FontSize = tbInput.Font.Size;
-
-            int rightPanelWidth = splitContainer_LeftRight.Size.Width - splitContainer_LeftRight.SplitterDistance - splitContainer_LeftRight.SplitterWidth;
-            CurrentSettings.RightPanelWidth = rightPanelWidth;
 
             CurrentSettings.Save();
         }

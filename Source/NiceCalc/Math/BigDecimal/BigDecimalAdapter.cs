@@ -31,7 +31,7 @@ namespace NiceCalc.Math
                     }
                     else
                     {
-                        return BigDecimal.Pow(@base, exponent.WholeValue, precision);
+                        return BigDecimalMaths.Pow(@base, exponent.WholeValue);
                     }
                 }
             }

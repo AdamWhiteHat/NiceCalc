@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net48</TargetFramework>
+		<TargetFramework>net7.0-windows</TargetFramework>
 		<OutputType>WinExe</OutputType>
 		<UseWindowsForms>True</UseWindowsForms>
 		<StartupObject>NiceCalc.Program</StartupObject>
@@ -14,7 +14,7 @@
 		<RepositoryUrl>https://github.com/AdamWhiteHat/NiceCalc</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageIcon>NiceCalc.ico</PackageIcon>
-		<ApplicationIcon>NiceCalc.ico</ApplicationIcon>		
+		<ApplicationIcon>NiceCalc.ico</ApplicationIcon>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -42,19 +42,20 @@
 			<PackagePath>\</PackagePath>
 		</None>
 		<None Update="Settings.json">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="ExtendedNumerics.BigDecimal" Version="3000.0.1.312" />
-		<PackageReference Include="ExtendedNumerics.BigRational" Version="3000.0.1.326" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="ExtendedNumerics.BigDecimal" Version="3003.0.0.346" />
+		<PackageReference Include="ExtendedNumerics.BigRational" Version="3000.0.2.132" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Reference Include="Microsoft.Build.Framework" />
-	  <Reference Include="System.Management" />
+		<Reference Include="System.Management">
+		  <HintPath>..\..\..\..\..\.nuget\packages\system.management\6.0.0\lib\net6.0\System.Management.dll</HintPath>
+		</Reference>
 	</ItemGroup>
 
 	<ItemGroup>

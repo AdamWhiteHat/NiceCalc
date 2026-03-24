@@ -1,5 +1,4 @@
 ﻿using ExtendedNumerics;
-using Microsoft.Build.Framework.XamlTypes;
 using NiceCalc.Interpreter;
 using NiceCalc.Interpreter.Language;
 using NiceCalc.Tokenization;

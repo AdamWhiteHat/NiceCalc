@@ -16,24 +16,27 @@ namespace NiceCalc
 {
     public class AutoCompleteTextBox : RichTextBox
     {
-        public event EventHandler ExecuteExpression;
-        public event EventHandler ClearOutput;
-
         public bool IsSuggestionBoxVisible { get { return _listBox.Visible; } }
 
-        public List<string> AutoCompleteCustomSource
+        public IReadOnlyList<string> AutoCompleteCustomSource
         {
-            get { return _autoCompleteCustomSource; }
-            set { _autoCompleteCustomSource = value; }
+            get { return _autoCompleteCustomSource.ToList(); }
         }
         private List<string> _autoCompleteCustomSource;
 
+        #region Private Members
+
         private bool _isAdded;
         private ListBox _listBox;
+        private Action CalcTotalCallback;
+        private Action CalcClearCallback;
         private string typedThusFar = string.Empty;
 
-
         private static readonly char[] Delimiters = new char[] { ' ', '\r', '\n', '\t', '(', ')' };
+
+        #endregion
+
+        #region Constructor and Initialization
 
         public AutoCompleteTextBox()
             : base()
@@ -41,6 +44,13 @@ namespace NiceCalc
             InitializeComponent();
             AcceptsTab = true;
             base.ShortcutsEnabled = true;
+        }
+
+        public void Initialize(List<string> initialAutoCompleteItems, Action calculateTotalCallback, Action clearOutputCallback)
+        {
+            _autoCompleteCustomSource = SortAutoCompleteSuggestionList(initialAutoCompleteItems);
+            CalcTotalCallback = calculateTotalCallback;
+            CalcClearCallback = clearOutputCallback;
         }
 
         private void InitializeComponent()
@@ -68,10 +78,80 @@ namespace NiceCalc
             MouseClick += AutoCompleteTextBox_MouseClick;
         }
 
+        #endregion
+
+        #region Static Methods
+
+        public static List<string> SortAutoCompleteSuggestionList(IEnumerable<string> autoCompleteSuggestionList)
+        {
+            var firstCharacterAlphabetically = autoCompleteSuggestionList.OrderBy(s => s[0]);
+            var thenbyLength = firstCharacterAlphabetically.ThenBy(s => s.Length);
+            var thenbyAlphabetically = thenbyLength.ThenBy(s => s);
+            return thenbyAlphabetically.ToList();
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        public void AddAutoCompleteSuggestions(params string[] suggestions)
+        {
+            var temp = _autoCompleteCustomSource.Concat(suggestions).Distinct();
+            _autoCompleteCustomSource = SortAutoCompleteSuggestionList(temp);
+        }
+
+        public void RemoveAutoCompleteSuggestion(string suggestion)
+        {
+            _autoCompleteCustomSource.Remove(suggestion);
+        }
+
+        #region External Text Injection
+
+        public void InsertFunctionAroundCaret(string functionName)
+        {
+            int start = this.SelectionStart;
+            int end = start + this.SelectionLength;
+
+            string newText = this.Text;
+
+            newText = newText.Insert(end, ")");
+            newText = newText.Insert(start, functionName + "(");
+
+            int restoreLocation = newText.IndexOf('(', start) + 1;
+
+            this.Text = newText;
+            this.SelectionStart = restoreLocation;
+            this.SelectionLength = 0;
+
+            this.Focus();
+        }
+
+        public void InsertTextAfterCaret(string insertText)
+        {
+            int start = this.SelectionStart;
+            int end = start + this.SelectionLength;
+
+            string newText = this.Text;
+
+            newText = newText.Insert(end, insertText);
+            int insertionLength = insertText.Length;
+
+            this.Text = newText;
+
+            this.SelectionStart = end + insertionLength;
+            this.SelectionLength = 0;
+
+            this.Focus();
+        }
+
+        #endregion
+
+        #region Pass-Thru Methods
+
         public new void Clear()
         {
             base.Clear();
-            Raise_ClearOutput();
+            CalcClearCallback();
         }
 
         public new void SelectAll()
@@ -95,15 +175,11 @@ namespace NiceCalc
             }
         }
 
-        protected void Raise_ExecuteExpression()
-        {
-            ExecuteExpression?.Invoke(this, EventArgs.Empty);
-        }
+        #endregion
 
-        protected void Raise_ClearOutput()
-        {
-            ClearOutput?.Invoke(this, EventArgs.Empty);
-        }
+        #endregion
+
+        #region Private Methods
 
         private void this_KeyDown(object sender, KeyEventArgs e)
         {
@@ -145,7 +221,7 @@ namespace NiceCalc
                     {
                         e.SuppressKeyPress = true;
                         e.Handled = true;
-                        Raise_ExecuteExpression();
+                        CalcTotalCallback();
                         isHandled = true;
                     }
                     break;
@@ -155,7 +231,7 @@ namespace NiceCalc
                     {
                         e.SuppressKeyPress = true;
                         e.Handled = true;
-                        Raise_ExecuteExpression();
+                        CalcTotalCallback();
                         isHandled = true;
                     }
                     break;
@@ -364,16 +440,6 @@ namespace NiceCalc
             SelectionStart = pos + 1;
         }
 
-        private static string GetIncompleteWord(string text, int caretPosition)
-        {
-            int pos = caretPosition;
-            int posStart = text.LastIndexOfAny(Delimiters, (pos < 1) ? 0 : pos - 1);
-            posStart = (posStart == -1) ? 0 : posStart + 1;
-            int posEnd = text.IndexOfAny(Delimiters, pos);
-            posEnd = (posEnd == -1) ? text.Length : posEnd;
-            int length = ((posEnd - posStart) < 0) ? 0 : posEnd - posStart;
-
-            return text.Substring(posStart, length);
-        }
+        #endregion
     }
 }

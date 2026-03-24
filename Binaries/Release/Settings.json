@@ -1,13 +1,15 @@
 {
-  "CopyInputToOutput": true,
-  "CtrlEnterForTotal": false,
-  "PreferFractionsResult": false,
-  "Precision": 20,
-  "FontName": "Consolas",
-  "FontSize": 20.25,
-  "RightPanelWidth": 225,
-  "WindowWidth": 705,
-  "WindowHeight": 525,
-  "WindowLocationX": 215,
-  "WindowLocationY": 5
+    "CopyInputToOutput": true,
+    "CtrlEnterForTotal": false,
+    "PreferFractionsResult": false,
+    "BigDecimal.AlwaysNormalize": true,
+    "BigDecimal.AlwaysTruncate": true,
+    "BigDecimal.Precision": 20,
+    "FontName": "Consolas",
+    "FontSize": 20.25,
+    "RightPanelWidth": 225,
+    "WindowWidth": 705,
+    "WindowHeight": 525,
+    "WindowLocationX": 215,
+    "WindowLocationY": 5
 }

@@ -10,7 +10,6 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Security.Permissions;
 using NiceCalc.Interpreter.Language;
-using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using NiceCalc.Tokenization;
 using Newtonsoft.Json.Linq;
 

@@ -131,7 +131,6 @@ namespace NiceCalc
             // tbInput
             // 
             this.tbInput.AcceptsTab = true;
-            this.tbInput.AutoCompleteCustomSource = null;
             this.tbInput.ContextMenuStrip = this._contextMenu;
             this.tbInput.Cursor = System.Windows.Forms.Cursors.Default;
             this.tbInput.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -781,6 +780,7 @@ namespace NiceCalc
             this.MinimumSize = new System.Drawing.Size(458, 363);
             this.Name = "MainForm";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "NiceCalc";
             this.Shown += new System.EventHandler(this.MainForm_Shown);
             this.splitContainer_TopBottom.Panel1.ResumeLayout(false);
